@@ -1,3 +1,4 @@
+```mermaid
 graph TD
 A[Discord Event / Mensaje] --> B(domains/bot)
 B --> C{Router de Intención<br/>Lógica Local / Determinista}
@@ -27,9 +28,11 @@ B --> C{Router de Intención<br/>Lógica Local / Determinista}
     style C fill:#f9f,stroke:#333,stroke-width:2px
     style H fill:#bbf,stroke:#333,stroke-width:2px
     style O fill:#ffcccb,stroke:#333,stroke-width:1px
+```
 
 ---
 
+```mermaid
 graph TD
 subgraph helith/ [Raíz del Proyecto]
 subgraph core/ [Infraestructura Compartida]
@@ -61,3 +64,4 @@ end
 
     style core/ fill:#e1f5fe,stroke:#01579b
     style domains/ fill:#ede7f6,stroke:#4a148c
+```
