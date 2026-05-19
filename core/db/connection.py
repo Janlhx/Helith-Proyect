@@ -11,7 +11,7 @@ def get_supabase_client():
     """Inicializa y retorna el cliente de Supabase si existen credenciales."""
     # Importación diferida para no exigir la librería si solo se usa SQLite
     try:
-        from supabase import create_client, Client
+        from supabase import Client, create_client
     except ImportError:
         logger.warning(
             "Librería 'supabase' no instalada. Operando en modo fallback."

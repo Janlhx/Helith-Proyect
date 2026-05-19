@@ -1,5 +1,5 @@
-import logging
 import discord
+import logging
 
 from core.config import settings
 
