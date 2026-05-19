@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 # Prompt de sistema que define la personalidad de Helith
 # Basado en la sección 3.1 de HELITH_DOCS.md
 
