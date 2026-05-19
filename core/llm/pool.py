@@ -72,7 +72,7 @@ class LLMPool:
 
         genai.configure(api_key=settings.GEMINI_API_KEY)
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-1.5-flash-latest",
             system_instruction=system_prompt if system_prompt else None,
         )
         response = await model.generate_content_async(prompt)
@@ -100,7 +100,7 @@ class LLMPool:
         messages.append({"role": "user", "content": prompt})
 
         response = await client.chat.completions.create(
-            model="llama-3.1-70b-versatile",
+            model="llama-3.3-70b-versatile",
             messages=messages,  # type: ignore[arg-type]
         )
         return response.choices[0].message.content or ""
