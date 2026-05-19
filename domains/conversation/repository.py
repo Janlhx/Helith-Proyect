@@ -1,5 +1,5 @@
-import logging
 from core.db.connection import get_supabase_client, get_sqlite_connection
+import logging
 
 logger = logging.getLogger("helith.conversation.repository")
 
