@@ -1,3 +1,0 @@
-# El despliegue continuo (CD) se maneja de forma nativa a través de Render.
-# Cada push a las ramas 'staging' y 'main' activará el Auto-Deploy en sus respectivos servicios.
-# Este archivo se deja vacío o como referencia para no interferir.
