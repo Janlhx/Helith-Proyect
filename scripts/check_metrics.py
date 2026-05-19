@@ -31,7 +31,8 @@ def load_token() -> str:
 
 
 RENDER_URL = os.environ.get(
-    "HELITH_URL", "https://helith-proyect-staging-phase.onrender.com"  # Cambia esto a tu URL real
+    "HELITH_URL",
+    "https://helith-proyect-staging-phase.onrender.com",  # Cambia a tu URL real
 )
 
 
@@ -64,7 +65,10 @@ def main():
         print("\n❌ No se pudo conectar. ¿Está el bot corriendo en Render?")
         sys.exit(1)
     except requests.exceptions.Timeout:
-        print("\n⏱️  Timeout. Render puede estar despertando al bot (espera 30s e inténtalo de nuevo).")
+        print(
+            "\n⏱️  Timeout. Render puede estar despertando al bot "
+            "(espera 30s e inténtalo de nuevo)."
+        )
         sys.exit(1)
 
     if resp.status_code == 401:
@@ -85,10 +89,17 @@ def main():
     print("  📅  RESUMEN — Últimos 7 días")
     separador()
     print(f"  🔢 Total de tokens consumidos : {stats.get('total_tokens', 0):>10,}")
-    print(f"  📈 Promedio diario            : {stats.get('avg_tokens_per_day', 0):>10,}")
+    print(
+        f"  📈 Promedio diario            : "
+        f"{stats.get('avg_tokens_per_day', 0):>10,}"
+    )
 
     alerts = data.get("active_alerts", 0)
-    alert_label = f"⚠️  {alerts} modelo(s) en alerta" if alerts > 0 else "✅ Sin alertas activas"
+    alert_label = (
+        f"⚠️  {alerts} modelo(s) en alerta"
+        if alerts > 0
+        else "✅ Sin alertas activas"
+    )
     print(f"\n  {alert_label}")
 
     # ── Consumo por modelo ────────────────────────────────────────────────────

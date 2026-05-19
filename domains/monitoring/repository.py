@@ -111,8 +111,9 @@ class MonitoringRepository:
 
     def _get_usage_sqlite(self, days: int = 7) -> list[dict]:
         """Recupera los logs de SQLite local."""
-        from core.db.connection import get_sqlite_connection
         from datetime import datetime, timedelta
+
+        from core.db.connection import get_sqlite_connection
 
         conn = get_sqlite_connection()
         if not conn:

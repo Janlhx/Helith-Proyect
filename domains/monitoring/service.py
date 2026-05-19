@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timedelta
 
 from domains.monitoring.models import TokenUsageLog
 from domains.monitoring.repository import monitoring_repo
@@ -75,9 +74,12 @@ class MonitoringService:
         logs_7d = monitoring_repo.get_usage_last_days(7)
 
         model_logs = [
-            l for l in logs_7d if l.get("model_name") == model_name
+            entry for entry in logs_7d
+            if entry.get("model_name") == model_name
         ]
-        tokens_7d = sum(l.get("total_tokens", 0) for l in model_logs)
+        tokens_7d = sum(
+            entry.get("total_tokens", 0) for entry in model_logs
+        )
         avg_daily = tokens_7d / 7 if tokens_7d > 0 else 0
 
         daily_limit = MODEL_DAILY_LIMITS.get(model_name, 500_000)

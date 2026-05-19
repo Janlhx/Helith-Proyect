@@ -39,7 +39,9 @@ class LLMPool:
                 text, prompt_t, completion_t = await self._call_gemini(
                     prompt, system_prompt
                 )
-                self._record("gemini-2.5-flash", server_id, user_id, prompt_t, completion_t)
+                self._record(
+                    "gemini-2.5-flash", server_id, user_id, prompt_t, completion_t
+                )
                 return text
             except Exception as e:
                 logger.error(
@@ -92,7 +94,9 @@ class LLMPool:
         except Exception as e:
             logger.warning(f"No se pudo registrar el uso de tokens: {e}")
 
-    async def _call_gemini(self, prompt: str, system_prompt: str) -> tuple[str, int, int]:
+    async def _call_gemini(
+        self, prompt: str, system_prompt: str
+    ) -> tuple[str, int, int]:
         import google.generativeai as genai
 
         genai.configure(api_key=settings.GEMINI_API_KEY)
