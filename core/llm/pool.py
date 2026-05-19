@@ -1,4 +1,5 @@
 import logging
+
 from core.config import settings
 
 logger = logging.getLogger("helith.llm")
@@ -30,7 +31,7 @@ class LLMPool:
     async def generate_response(
         self, prompt: str, system_prompt: str = ""
     ) -> str:
-        """Intenta generar una respuesta usando el pool de modelos con fallback en cascada."""
+        """Genera respuesta usando el pool de modelos con fallback."""
 
         # 1. Nivel Primario: Gemini
         if self.gemini_enabled:
@@ -64,9 +65,7 @@ class LLMPool:
             except Exception as e:
                 logger.error(f"Fallo en Groq: {e}. No hay más modelos disponibles.")
 
-        raise Exception(
-            "Todos los modelos del pool fallaron o no hay ninguno configurado con llaves válidas."
-        )
+        raise Exception("Todos los modelos fallaron o no están configurados.")
 
     async def _call_gemini(self, prompt: str, system_prompt: str) -> str:
         import google.generativeai as genai

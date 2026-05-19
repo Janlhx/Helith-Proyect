@@ -1,13 +1,14 @@
 import logging
 import os
 import sqlite3
+
 from core.config import settings
 
 logger = logging.getLogger("helith.db")
 
 
 def get_supabase_client():
-    """Inicializa y retorna el cliente de Supabase si las credenciales están presentes."""
+    """Inicializa y retorna el cliente de Supabase si existen credenciales."""
     # Importación diferida para no exigir la librería si solo se usa SQLite
     try:
         from supabase import create_client, Client
