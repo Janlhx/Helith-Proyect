@@ -1,8 +1,8 @@
 import logging
 
-from domains.conversation.repository import conversation_repo
 from core.llm.pool import llm_pool
 from core.llm.prompts import HELITH_PERSONALITY
+from domains.conversation.repository import conversation_repo
 
 logger = logging.getLogger("helith.conversation.service")
 
