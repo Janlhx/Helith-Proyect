@@ -47,7 +47,10 @@ class ConversationService:
         try:
             # 4. Generar respuesta usando el pool y la personalidad
             response = await llm_pool.generate_response(
-                prompt=full_prompt, system_prompt=HELITH_PERSONALITY
+                prompt=full_prompt,
+                system_prompt=HELITH_PERSONALITY,
+                server_id=channel_id,
+                user_id=user_id,
             )
 
             # 5. Guardar respuesta de Helith

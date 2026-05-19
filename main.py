@@ -33,6 +33,22 @@ def index():
     return jsonify({"name": "Helith", "status": "running"})
 
 
+@app.route("/dashboard")
+def dashboard():
+    from flask import request
+
+    # Protección básica: solo el admin con el token correcto puede ver el dashboard
+    auth = request.headers.get("Authorization", "")
+    expected = f"Bearer {settings.DISCORD_TOKEN[:20]}"
+    if auth != expected:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    from domains.monitoring.service import monitoring_service
+
+    report = monitoring_service.get_full_report()
+    return jsonify(report)
+
+
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port)

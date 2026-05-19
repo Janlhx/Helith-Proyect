@@ -24,7 +24,11 @@ class LLMPool:
         )
 
     async def generate_response(
-        self, prompt: str, system_prompt: str = ""
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        server_id: str = "unknown",
+        user_id: str = "unknown",
     ) -> str:
         """Genera respuesta usando el pool de modelos con fallback."""
 
@@ -32,7 +36,11 @@ class LLMPool:
         if self.gemini_enabled:
             try:
                 logger.info("Intentando generar respuesta con Gemini (Primario)...")
-                return await self._call_gemini(prompt, system_prompt)
+                text, prompt_t, completion_t = await self._call_gemini(
+                    prompt, system_prompt
+                )
+                self._record("gemini-2.5-flash", server_id, user_id, prompt_t, completion_t)
+                return text
             except Exception as e:
                 logger.error(
                     f"Fallo en Gemini: {e}. Intentando con el siguiente disponible..."
@@ -53,7 +61,11 @@ class LLMPool:
                     logger.info(
                         f"Intentando generar respuesta con Groq ({model_name})..."
                     )
-                    return await self._call_groq(prompt, system_prompt, model_name)
+                    text, prompt_t, completion_t = await self._call_groq(
+                        prompt, system_prompt, model_name
+                    )
+                    self._record(model_name, server_id, user_id, prompt_t, completion_t)
+                    return text
                 except Exception as e:
                     logger.error(
                         f"Fallo en Groq con {model_name}: {e}. "
@@ -62,7 +74,25 @@ class LLMPool:
 
         raise Exception("Todos los modelos fallaron o no están configurados.")
 
-    async def _call_gemini(self, prompt: str, system_prompt: str) -> str:
+    def _record(
+        self,
+        model_name: str,
+        server_id: str,
+        user_id: str,
+        prompt_tokens: int,
+        completion_tokens: int,
+    ):
+        """Registra el consumo de tokens en el servicio de monitoreo."""
+        try:
+            from domains.monitoring.service import monitoring_service
+
+            monitoring_service.record_usage(
+                model_name, server_id, user_id, prompt_tokens, completion_tokens
+            )
+        except Exception as e:
+            logger.warning(f"No se pudo registrar el uso de tokens: {e}")
+
+    async def _call_gemini(self, prompt: str, system_prompt: str) -> tuple[str, int, int]:
         import google.generativeai as genai
 
         genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -71,9 +101,14 @@ class LLMPool:
             system_instruction=system_prompt if system_prompt else None,
         )
         response = await model.generate_content_async(prompt)
-        return str(response.text)
+        usage = response.usage_metadata
+        prompt_tokens = getattr(usage, "prompt_token_count", 0) or 0
+        completion_tokens = getattr(usage, "candidates_token_count", 0) or 0
+        return str(response.text), prompt_tokens, completion_tokens
 
-    async def _call_groq(self, prompt: str, system_prompt: str, model_name: str) -> str:
+    async def _call_groq(
+        self, prompt: str, system_prompt: str, model_name: str
+    ) -> tuple[str, int, int]:
         from groq import AsyncGroq
 
         client = AsyncGroq(api_key=settings.GROQ_API_KEY)
@@ -86,7 +121,11 @@ class LLMPool:
             model=model_name,
             messages=messages,  # type: ignore[arg-type]
         )
-        return response.choices[0].message.content or ""
+        text = response.choices[0].message.content or ""
+        usage = response.usage
+        prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
+        completion_tokens = getattr(usage, "completion_tokens", 0) or 0
+        return text, prompt_tokens, completion_tokens
 
 
 # Instancia única para ser usada en todo el proyecto
