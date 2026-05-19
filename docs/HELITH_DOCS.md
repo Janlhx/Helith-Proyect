@@ -40,13 +40,13 @@ Helith es un bot de Discord de segunda generación, desarrollado como sucesor es
 
 Dalet fue construida con vibe coding sin arquitectura previa. Con el tiempo acumuló problemas estructurales que informan directamente el diseño de Helith:
 
-| Problema en Dalet | Impacto | Solución en Helith |
-|---|---|---|
+| Problema en Dalet                       | Impacto                                                            | Solución en Helith                                                     |
+| --------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
 | Fallback a Llama (calidad muy inferior) | Respuestas incoherentes con la personalidad cuando Gemini se agota | Pool de modelos de calidad comparable, nunca degradar a modelo incapaz |
-| Sin monitoreo de tokens | El colapso ocurre sin aviso, imposible actuar preventivamente | Monitoreo predictivo con alertas antes del agotamiento |
-| Comandos rotos en producción | Degrada la experiencia, quita interés a los usuarios | Ninguna feature llega a producción si no pasa tests |
-| Datos técnicos expuestos públicamente | Inapropiado en servidores con muchos usuarios | Comandos de admin solo accesibles para el administrador del bot |
-| Sin proceso de ingeniería | Dificulta mantenimiento y evolución del proyecto | DDD + documentación + CI/CD desde el día uno |
+| Sin monitoreo de tokens                 | El colapso ocurre sin aviso, imposible actuar preventivamente      | Monitoreo predictivo con alertas antes del agotamiento                 |
+| Comandos rotos en producción            | Degrada la experiencia, quita interés a los usuarios               | Ninguna feature llega a producción si no pasa tests                    |
+| Datos técnicos expuestos públicamente   | Inapropiado en servidores con muchos usuarios                      | Comandos de admin solo accesibles para el administrador del bot        |
+| Sin proceso de ingeniería               | Dificulta mantenimiento y evolución del proyecto                   | DDD + documentación + CI/CD desde el día uno                           |
 
 ---
 
@@ -56,13 +56,13 @@ Dalet fue construida con vibe coding sin arquitectura previa. Con el tiempo acum
 
 El contrapunto de Dalet. Donde Dalet es sarcástica, ácida y pasota, Helith es reservada y deliberada — habla menos pero cuando habla tiene peso. Escucha antes de hablar.
 
-| Atributo | Descripción |
-|---|---|
-| Tono | Reservada, directa, con profundidad. Menos ácida que Dalet. |
-| Emojis | Raramente. No performativa. |
-| Roleplay | No. Solo texto directo. |
+| Atributo           | Descripción                                                                      |
+| ------------------ | -------------------------------------------------------------------------------- |
+| Tono               | Reservada, directa, con profundidad. Menos ácida que Dalet.                      |
+| Emojis             | Raramente. No performativa.                                                      |
+| Roleplay           | No. Solo texto directo.                                                          |
 | Relación con Dalet | Son conocidas. Helith puede hacer referencias sutiles a Dalet sin ser su sombra. |
-| Creador | Litxe. No lo menciona a menos que sea relevante. |
+| Creador            | Litxe. No lo menciona a menos que sea relevante.                                 |
 
 ### 3.2 Propuesta de Valor
 
@@ -115,18 +115,60 @@ El contrapunto de Dalet. Donde Dalet es sarcástica, ácida y pasota, Helith es 
 - **RF-14:** Comandos de estado técnico solo accesibles para el administrador del bot.
 - **RF-15:** El bot reporta su estado al iniciar (versión, modelos disponibles, estado de la DB).
 
+### RF-16 — Búsqueda Web (Tavily)
+
+- **RF-16:** El bot puede realizar búsquedas web en tiempo real usando la API de Tavily para responder a preguntas sobre eventos recientes, noticias o información dinámica.
+
+#### Decisiones de diseño para búsqueda en web (Tavily)
+
+| Decisión               | Definición                                                                                                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Cuándo busca           | Solo cuando la pregunta requiere información actual — noticias, eventos recientes, precios, cosas que cambian con el tiempo. Conocimiento general que el LLM ya tiene no dispara búsqueda. |
+| Dónde vive             | `core/tools/search.py` — herramienta compartida, cualquier dominio puede invocarla                                                                                                         |
+| Optimización de tokens | Los resultados de Tavily se resumen a 2-3 datos clave antes de inyectarse al prompt. Nunca el artículo completo.                                                                           |
+| Formato de respuesta   | Máximo 3 líneas. Concisa, directa, con espacio para el tono natural de Helith. Sin bloques informativos.                                                                                   |
+
+#### Flujo
+
+Mensaje del usuario
+│
+▼
+Router detecta si necesita info actual
+│
+┌──┴──┐
+No Sí
+│ │
+│ Tavily busca
+│ │
+│ Se resume a 2-3 datos clave
+│ │
+└──► LLM genera respuesta
+máximo 3 líneas
+
+#### Ubicación en el proyecto
+
+core/
+└── tools/
+└── search.py # cliente de Tavily + lógica de resumen
+
+#### Notas
+
+- La detección de si una pregunta requiere búsqueda vive en el router de intención, no en el LLM — evita gastar tokens para decidir si buscar.
+- Tavily tiene free tier de 1000 búsquedas/mes — suficiente para staging y early production.
+- Si Tavily falla, Helith responde con lo que sabe y lo aclara honestamente si es necesario.
+
 ---
 
 ## 5. Requisitos No Funcionales
 
-| ID | Requisito | Descripción |
-|---|---|---|
-| RNF-01 | Confiabilidad | Ninguna feature existe en producción si no funciona. Sin comandos rotos. |
-| RNF-02 | Resiliencia de DB | Si Supabase no está disponible, el bot opera en modo degradado con SQLite local. El usuario es notificado. |
-| RNF-03 | Degradación gradual de LLM | El fallback nunca desciende a un modelo incapaz de sostener la personalidad. |
-| RNF-04 | Transparencia de errores | Los errores se registran con contexto suficiente. El usuario recibe un mensaje claro, no silencio. |
-| RNF-05 | Latencia | Tiempo de respuesta conversacional máximo de 5 segundos en condiciones normales. |
-| RNF-06 | Seguridad | Información técnica interna nunca expuesta públicamente. Validación de permisos en todos los comandos admin. |
+| ID     | Requisito                  | Descripción                                                                                                  |
+| ------ | -------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| RNF-01 | Confiabilidad              | Ninguna feature existe en producción si no funciona. Sin comandos rotos.                                     |
+| RNF-02 | Resiliencia de DB          | Si Supabase no está disponible, el bot opera en modo degradado con SQLite local. El usuario es notificado.   |
+| RNF-03 | Degradación gradual de LLM | El fallback nunca desciende a un modelo incapaz de sostener la personalidad.                                 |
+| RNF-04 | Transparencia de errores   | Los errores se registran con contexto suficiente. El usuario recibe un mensaje claro, no silencio.           |
+| RNF-05 | Latencia                   | Tiempo de respuesta conversacional máximo de 5 segundos en condiciones normales.                             |
+| RNF-06 | Seguridad                  | Información técnica interna nunca expuesta públicamente. Validación de permisos en todos los comandos admin. |
 
 ---
 
@@ -162,12 +204,12 @@ Router de Intención ──── clasificación determinista
 
 ### 6.3 Estrategia Multi-LLM
 
-| Nivel | Modelo | Uso |
-|---|---|---|
-| Primario | Gemini Flash / Pro | Conversación general, análisis de contexto |
-| Fallback 1 | Claude Haiku o GPT-4o mini | Calidad comparable, proveedor diferente |
-| Fallback 2 | Groq + Llama 3.1 70B | Solo respuestas simples, no conversacionales |
-| Clasificación local | sentence-transformers | Router de intención, embeddings de memoria. Sin costo de API. |
+| Nivel               | Modelo                     | Uso                                                           |
+| ------------------- | -------------------------- | ------------------------------------------------------------- |
+| Primario            | Gemini Flash / Pro         | Conversación general, análisis de contexto                    |
+| Fallback 1          | Claude Haiku o GPT-4o mini | Calidad comparable, proveedor diferente                       |
+| Fallback 2          | Groq + Llama 3.1 70B       | Solo respuestas simples, no conversacionales                  |
+| Clasificación local | sentence-transformers      | Router de intención, embeddings de memoria. Sin costo de API. |
 
 ### 6.4 Control de Costos
 
@@ -185,23 +227,23 @@ Router de Intención ──── clasificación determinista
 
 ## 7. Stack Tecnológico
 
-| Componente | Tecnología | Justificación |
-|---|---|---|
-| Lenguaje principal | Python 3.11+ | Ecosistema ML sin equivalente real en otros lenguajes |
-| Framework Discord | discord.py | Estable, bien documentado |
-| Base de datos | Supabase (PostgreSQL) | Free tier generoso + pgvector nativo para embeddings |
-| DB fallback | SQLite | Resiliencia sin dependencia externa |
-| Embeddings / memoria | pgvector en Supabase | Elimina necesidad de infraestructura separada para vectores |
-| Embeddings locales | sentence-transformers | Para el router y generación de embeddings sin costo de API |
-| ML predictivo | scikit-learn / XGBoost | Predicción de progreso osu! |
-| Monitoreo de tokens | Modelo propio (scikit-learn) | Entrenado con datos generados por el propio bot |
-| LLMs | Gemini API, Anthropic API, Groq | Pool multi-proveedor |
-| Hosting del bot | Render | Free tier disponible, desplegado con Flask mínimo para health checks |
-| Web Server (Health Check) | Flask | Necesario para mantener vivo el proceso en el free tier de Render |
-| Monitoreo / Keep-alive | UptimeRobot | Evita que Render se duerma y que Supabase se pause por inactividad |
-| Gestión de dependencias | uv | Más rápido que pip, moderno |
+| Componente                | Tecnología                      | Justificación                                                        |
+| ------------------------- | ------------------------------- | -------------------------------------------------------------------- |
+| Lenguaje principal        | Python 3.11+                    | Ecosistema ML sin equivalente real en otros lenguajes                |
+| Framework Discord         | discord.py                      | Estable, bien documentado                                            |
+| Base de datos             | Supabase (PostgreSQL)           | Free tier generoso + pgvector nativo para embeddings                 |
+| DB fallback               | SQLite                          | Resiliencia sin dependencia externa                                  |
+| Embeddings / memoria      | pgvector en Supabase            | Elimina necesidad de infraestructura separada para vectores          |
+| Embeddings locales        | sentence-transformers           | Para el router y generación de embeddings sin costo de API           |
+| ML predictivo             | scikit-learn / XGBoost          | Predicción de progreso osu!                                          |
+| Monitoreo de tokens       | Modelo propio (scikit-learn)    | Entrenado con datos generados por el propio bot                      |
+| LLMs                      | Gemini API, Anthropic API, Groq | Pool multi-proveedor                                                 |
+| Hosting del bot           | Render                          | Free tier disponible, desplegado con Flask mínimo para health checks |
+| Web Server (Health Check) | Flask                           | Necesario para mantener vivo el proceso en el free tier de Render    |
+| Monitoreo / Keep-alive    | UptimeRobot                     | Evita que Render se duerma y que Supabase se pause por inactividad   |
+| Gestión de dependencias   | uv                              | Más rápido que pip, moderno                                          |
 
-> **Nota:** PostgreSQL se mantiene como motor de base de datos. Supabase lo provee gestionado con ventajas adicionales (pgvector, dashboard, free tier). *Nota operacional:* Supabase pausa proyectos inactivos tras 7 días; se mitiga con pings de UptimeRobot.
+> **Nota:** PostgreSQL se mantiene como motor de base de datos. Supabase lo provee gestionado con ventajas adicionales (pgvector, dashboard, free tier). _Nota operacional:_ Supabase pausa proyectos inactivos tras 7 días; se mitiga con pings de UptimeRobot.
 
 ---
 
@@ -266,11 +308,11 @@ helith/
 
 ### Branches
 
-| Branch | Propósito |
-|---|---|
-| `development` | Trabajo diario, features en progreso |
-| `staging` | Validación antes de producción, ambiente de pruebas |
-| `main` | Producción, solo mergea lo que está verificado |
+| Branch        | Propósito                                           |
+| ------------- | --------------------------------------------------- |
+| `development` | Trabajo diario, features en progreso                |
+| `staging`     | Validación antes de producción, ambiente de pruebas |
+| `main`        | Producción, solo mergea lo que está verificado      |
 
 ### Pipeline CI (GitHub Actions — ci.yml)
 
@@ -327,7 +369,7 @@ Objetivo: el sistema tiene visibilidad total de su consumo y puede predecir agot
 - Registro de todas las llamadas LLM con metadata completa
 - Modelo de predicción de consumo (primera versión, regresión)
 - Sistema de alertas para el administrador del bot
-- Dashboard básico de métricas (solo admin)
+- Dashboard básico de métricas basado en Flask (solo admin)
 - Comparación consumo real vs. predicción para evaluar el modelo
 
 ### Fase 4 — ML Predictivo osu!
@@ -341,8 +383,9 @@ Objetivo: la feature diferenciadora de Helith está funcionando con datos reales
 
 ### Fase 5 — Pulido y Estabilización
 
-Objetivo: el bot está listo para operar en múltiples servidores de forma estable.
+Objetivo: el bot está listo para operar en múltiples servidores de forma estable y con habilidades de búsqueda avanzadas.
 
+- Integración y optimización de Búsqueda Web (Tavily)
 - Comandos de administración completos
 - Pruebas de carga bajo múltiples usuarios simultáneos
 - Documentación de comandos para usuarios finales
@@ -353,19 +396,19 @@ Objetivo: el bot está listo para operar en múltiples servidores de forma estab
 
 ## 11. Diferencias Clave con Dalet
 
-| Aspecto | Dalet | Helith |
-|---|---|---|
-| Proceso de desarrollo | Vibe coding sin planificación | Ingeniería de software: requisitos → arquitectura → código |
-| Gestión de tokens | Sin monitoreo, colapso silencioso | Monitoreo predictivo, alertas preventivas |
-| Sistema de fallback LLM | Gemini → Llama (calidad muy diferente) | Pool de modelos de calidad comparable |
-| Comandos rotos | Existen en producción | No llegan a producción |
-| Datos técnicos | Visibles públicamente | Solo accesibles para el administrador |
-| ML | Llamadas a API disfrazadas de ML | Modelos propios para predicción y monitoreo |
-| Personalidad | Sarcástica, ácida, pasota | Reservada, directa, con profundidad |
-| Enfoque principal | osu! + conversación general | ML predictivo + conversación estable |
-| Arquitectura | Sin estructura definida | Domain-Driven Design |
-| Infraestructura | Render + Neon | Render + Supabase |
-| DevOps | Sin CI/CD | GitHub Actions + deploy automático por branch |
+| Aspecto                 | Dalet                                  | Helith                                                     |
+| ----------------------- | -------------------------------------- | ---------------------------------------------------------- |
+| Proceso de desarrollo   | Vibe coding sin planificación          | Ingeniería de software: requisitos → arquitectura → código |
+| Gestión de tokens       | Sin monitoreo, colapso silencioso      | Monitoreo predictivo, alertas preventivas                  |
+| Sistema de fallback LLM | Gemini → Llama (calidad muy diferente) | Pool de modelos de calidad comparable                      |
+| Comandos rotos          | Existen en producción                  | No llegan a producción                                     |
+| Datos técnicos          | Visibles públicamente                  | Solo accesibles para el administrador                      |
+| ML                      | Llamadas a API disfrazadas de ML       | Modelos propios para predicción y monitoreo                |
+| Personalidad            | Sarcástica, ácida, pasota              | Reservada, directa, con profundidad                        |
+| Enfoque principal       | osu! + conversación general            | ML predictivo + conversación estable                       |
+| Arquitectura            | Sin estructura definida                | Domain-Driven Design                                       |
+| Infraestructura         | Render + Neon                          | Render + Supabase                                          |
+| DevOps                  | Sin CI/CD                              | GitHub Actions + deploy automático por branch              |
 
 ---
 
@@ -384,16 +427,16 @@ Objetivo: el bot está listo para operar en múltiples servidores de forma estab
 
 Esta sección documenta el razonamiento detrás de decisiones importantes. Útil para no repetir debates ya resueltos.
 
-| Decisión | Alternativas consideradas | Razón de la elección |
-|---|---|---|
-| Python como lenguaje principal | TypeScript, arquitectura mixta | Ecosistema ML insustituible. Complejidad de dos runtimes no justificada en esta etapa. |
-| Render sobre Railway | Railway, Fly.io, VPS | Decisión de usar Render por disponibilidad y facilidad de uso con UptimeRobot para mantenerlo vivo. |
-| Supabase sobre Neon | Neon, ElephantSQL, Tembo | pgvector nativo elimina infraestructura separada para embeddings. Free tier más generoso. |
-| DDD sobre arquitectura por capas | Por capas, monorepo | Dominios bien definidos desde el inicio. Más intuitivo de navegar. Mejor alineación con lo aprendido en Ingeniería de Software. |
-| Router determinista, no agéntico | Sistema agéntico con LLM orquestador | Un orquestador LLM duplica el gasto de tokens antes de llegar a la funcionalidad real. Clasificación determinista es más robusta y económica. |
+| Decisión                           | Alternativas consideradas                        | Razón de la elección                                                                                                                                         |
+| ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Python como lenguaje principal     | TypeScript, arquitectura mixta                   | Ecosistema ML insustituible. Complejidad de dos runtimes no justificada en esta etapa.                                                                       |
+| Render sobre Railway               | Railway, Fly.io, VPS                             | Decisión de usar Render por disponibilidad y facilidad de uso con UptimeRobot para mantenerlo vivo.                                                          |
+| Supabase sobre Neon                | Neon, ElephantSQL, Tembo                         | pgvector nativo elimina infraestructura separada para embeddings. Free tier más generoso.                                                                    |
+| DDD sobre arquitectura por capas   | Por capas, monorepo                              | Dominios bien definidos desde el inicio. Más intuitivo de navegar. Mejor alineación con lo aprendido en Ingeniería de Software.                              |
+| Router determinista, no agéntico   | Sistema agéntico con LLM orquestador             | Un orquestador LLM duplica el gasto de tokens antes de llegar a la funcionalidad real. Clasificación determinista es más robusta y económica.                |
 | Pool de LLMs de calidad comparable | Un solo proveedor con fallback a modelo inferior | El problema principal de Dalet fue el fallback a Llama — calidad insuficiente para sostener personalidad. El fallback debe ser transparente para el usuario. |
-| uv sobre pip/poetry | pip, poetry, conda | Más rápido, moderno, mejor manejo de dependencias en proyectos nuevos. |
+| uv sobre pip/poetry                | pip, poetry, conda                               | Más rápido, moderno, mejor manejo de dependencias en proyectos nuevos.                                                                                       |
 
 ---
 
-*Documento vivo — se actualiza conforme el proyecto avanza.*
+_Documento vivo — se actualiza conforme el proyecto avanza._
