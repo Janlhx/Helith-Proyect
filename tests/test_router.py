@@ -1,4 +1,5 @@
 from unittest.mock import Mock
+
 from domains.bot.router import intent_router
 
 
