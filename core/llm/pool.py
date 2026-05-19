@@ -55,7 +55,10 @@ class LLMPool:
                     )
                     return await self._call_groq(prompt, system_prompt, model_name)
                 except Exception as e:
-                    logger.error(f"Fallo en Groq con {model_name}: {e}. Pasando al siguiente...")
+                    logger.error(
+                        f"Fallo en Groq con {model_name}: {e}. "
+                        "Pasando al siguiente..."
+                    )
 
         raise Exception("Todos los modelos fallaron o no están configurados.")
 

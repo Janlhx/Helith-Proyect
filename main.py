@@ -104,7 +104,8 @@ async def on_message(message):
             retry_user = bucket_user.update_rate_limit()
             if retry_user:
                 await message.reply(
-                    f"Oye, relájate un poco. Estás hablando demasiado rápido. Inténtalo de nuevo en {retry_user:.1f} segundos."
+                    f"Oye, relájate un poco. Estás hablando demasiado rápido. "
+                    f"Inténtalo de nuevo en {retry_user:.1f} segundos."
                 )
                 return
 
@@ -114,7 +115,8 @@ async def on_message(message):
                 retry_guild = bucket_guild.update_rate_limit()
                 if retry_guild:
                     await message.reply(
-                        f"Este servidor está muy ruidoso. Me están saturando. Inténtalo de nuevo en {retry_guild:.1f} segundos."
+                        f"Este servidor está muy ruidoso. Me están saturando. "
+                        f"Inténtalo de nuevo en {retry_guild:.1f} segundos."
                     )
                     return
 
