@@ -14,18 +14,13 @@ class LLMPool:
             bool(settings.GEMINI_API_KEY)
             and settings.GEMINI_API_KEY != "your_gemini_key"
         )
-        self.anthropic_enabled = (
-            bool(settings.ANTHROPIC_API_KEY)
-            and settings.ANTHROPIC_API_KEY != "your_anthropic_key"
-        )
         self.groq_enabled = (
             bool(settings.GROQ_API_KEY)
             and settings.GROQ_API_KEY != "your_groq_key"
         )
 
         logger.info(
-            f"Pool inicializado: Gemini={self.gemini_enabled}, "
-            f"Anthropic={self.anthropic_enabled}, Groq={self.groq_enabled}"
+            f"Pool inicializado: Gemini={self.gemini_enabled}, Groq={self.groq_enabled}"
         )
 
     async def generate_response(
@@ -40,30 +35,30 @@ class LLMPool:
                 return await self._call_gemini(prompt, system_prompt)
             except Exception as e:
                 logger.error(
-                    f"Fallo en Gemini: {e}. Pasando a Fallback 1 (Anthropic)..."
+                    f"Fallo en Gemini: {e}. Intentando con el siguiente disponible..."
                 )
 
-        # 2. Fallback 1: Anthropic (Claude Haiku)
-        if self.anthropic_enabled:
-            try:
-                logger.info(
-                    "Intentando generar respuesta con Anthropic (Fallback 1)..."
-                )
-                return await self._call_anthropic(prompt, system_prompt)
-            except Exception as e:
-                logger.error(
-                    f"Fallo en Anthropic: {e}. Pasando a Fallback 2 (Groq)..."
-                )
-
-        # 3. Fallback 2: Groq (Llama 3.1 70B)
+        # 2. Nivel Secundario: Pool de Groq
         if self.groq_enabled:
-            try:
-                logger.info(
-                    "Intentando generar respuesta con Groq (Fallback 2)..."
-                )
-                return await self._call_groq(prompt, system_prompt)
-            except Exception as e:
-                logger.error(f"Fallo en Groq: {e}. No hay más modelos disponibles.")
+            # Lista de modelos a intentar en orden
+            groq_models = [
+                "llama-3.3-70b-versatile",
+                "deepseek-r1-distill-llama-70b",
+                "llama-3.1-8b-instant",
+                "meta-llama/llama-4-scout-17b-16e-instruct",
+            ]
+
+            for model_name in groq_models:
+                try:
+                    logger.info(
+                        f"Intentando generar respuesta con Groq ({model_name})..."
+                    )
+                    return await self._call_groq(prompt, system_prompt, model_name)
+                except Exception as e:
+                    logger.error(
+                        f"Fallo en Groq con {model_name}: {e}. "
+                        "Pasando al siguiente..."
+                    )
 
         raise Exception("Todos los modelos fallaron o no están configurados.")
 
@@ -72,25 +67,13 @@ class LLMPool:
 
         genai.configure(api_key=settings.GEMINI_API_KEY)
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash-latest",
+            model_name="gemini-2.5-flash",
             system_instruction=system_prompt if system_prompt else None,
         )
         response = await model.generate_content_async(prompt)
         return str(response.text)
 
-    async def _call_anthropic(self, prompt: str, system_prompt: str) -> str:
-        from anthropic import AsyncAnthropic
-
-        client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
-        response = await client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=1024,
-            system=system_prompt if system_prompt else "",  # type: ignore[arg-type]
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return response.content[0].text  # type: ignore[union-attr]
-
-    async def _call_groq(self, prompt: str, system_prompt: str) -> str:
+    async def _call_groq(self, prompt: str, system_prompt: str, model_name: str) -> str:
         from groq import AsyncGroq
 
         client = AsyncGroq(api_key=settings.GROQ_API_KEY)
@@ -100,7 +83,7 @@ class LLMPool:
         messages.append({"role": "user", "content": prompt})
 
         response = await client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=model_name,
             messages=messages,  # type: ignore[arg-type]
         )
         return response.choices[0].message.content or ""
