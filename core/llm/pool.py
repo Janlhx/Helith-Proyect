@@ -75,9 +75,8 @@ class LLMPool:
             model_name="gemini-1.5-flash",
             system_instruction=system_prompt if system_prompt else None,
         )
-        # Usamos la versión asíncrona
         response = await model.generate_content_async(prompt)
-        return response.text
+        return str(response.text)
 
     async def _call_anthropic(self, prompt: str, system_prompt: str) -> str:
         from anthropic import AsyncAnthropic
@@ -86,10 +85,10 @@ class LLMPool:
         response = await client.messages.create(
             model="claude-3-haiku-20240307",
             max_tokens=1024,
-            system=system_prompt if system_prompt else None,
+            system=system_prompt if system_prompt else "",  # type: ignore[arg-type]
             messages=[{"role": "user", "content": prompt}],
         )
-        return response.content[0].text
+        return response.content[0].text  # type: ignore[union-attr]
 
     async def _call_groq(self, prompt: str, system_prompt: str) -> str:
         from groq import AsyncGroq
@@ -102,9 +101,9 @@ class LLMPool:
 
         response = await client.chat.completions.create(
             model="llama-3.1-70b-versatile",
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
         )
-        return response.choices[0].message.content
+        return response.choices[0].message.content or ""
 
 
 # Instancia única para ser usada en todo el proyecto

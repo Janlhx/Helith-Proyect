@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # Bot
     VERSION: str = "0.1.0"
     PREFIX: str = "h."
-    DISCORD_TOKEN: str
+    DISCORD_TOKEN: str = ""
 
     # Base de datos
     SUPABASE_URL: str = ""
