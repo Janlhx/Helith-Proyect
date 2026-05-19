@@ -1,4 +1,5 @@
 import logging
+
 from domains.conversation.repository import conversation_repo
 from core.llm.pool import llm_pool
 from core.llm.prompts import HELITH_PERSONALITY
@@ -39,7 +40,8 @@ class ConversationService:
             full_prompt += f"{role_label} {msg['content']}\n"
 
         logger.info(
-            f"Generando respuesta para el canal {channel_id} con {len(history)} mensajes de contexto."
+            f"Generando respuesta para el canal {channel_id} "
+            f"con {len(history)} mensajes de contexto."
         )
 
         try:

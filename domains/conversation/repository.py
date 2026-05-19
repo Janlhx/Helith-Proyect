@@ -1,4 +1,5 @@
 import logging
+
 from core.db.connection import get_supabase_client, get_sqlite_connection
 
 logger = logging.getLogger("helith.conversation.repository")
@@ -83,7 +84,8 @@ class ConversationRepository:
                 )
                 conn.execute(
                     """
-                    INSERT INTO conversation_history (channel_id, user_id, role, content)
+                    INSERT INTO conversation_history 
+                    (channel_id, user_id, role, content)
                     VALUES (?, ?, ?, ?)
                 """,
                     (channel_id, user_id, role, content),
