@@ -66,6 +66,16 @@ async def on_error(event, *args, **kwargs):
     logger.exception(f"Error en evento {event}")
 
 
+# Mapeo de cooldowns por usuario: 5 mensajes por minuto
+user_cooldown = commands.CooldownMapping.from_cooldown(
+    5, 60.0, commands.BucketType.user
+)
+# Mapeo de cooldowns por servidor: 20 mensajes por minuto
+guild_cooldown = commands.CooldownMapping.from_cooldown(
+    20, 60.0, commands.BucketType.guild
+)
+
+
 @bot.event
 async def on_message(message):
     # Ignorar mensajes del propio bot
@@ -85,9 +95,29 @@ async def on_message(message):
 
     if intent == "conversation":
         # Respondemos si nos mencionan o es mensaje directo
-        if bot.user.mentioned_in(message) or isinstance(
-            message.channel, discord.DMChannel
-        ):
+        is_mentioned = bot.user.mentioned_in(message)
+        is_dm = isinstance(message.channel, discord.DMChannel)
+
+        if is_mentioned or is_dm:
+            # 1. Aplicar cooldown por usuario
+            bucket_user = user_cooldown.get_bucket(message)
+            retry_user = bucket_user.update_rate_limit()
+            if retry_user:
+                await message.reply(
+                    f"Oye, relájate un poco. Estás hablando demasiado rápido. Inténtalo de nuevo en {retry_user:.1f} segundos."
+                )
+                return
+
+            # 2. Aplicar cooldown por servidor (solo si no es DM)
+            if not is_dm:
+                bucket_guild = guild_cooldown.get_bucket(message)
+                retry_guild = bucket_guild.update_rate_limit()
+                if retry_guild:
+                    await message.reply(
+                        f"Este servidor está muy ruidoso. Me están saturando. Inténtalo de nuevo en {retry_guild:.1f} segundos."
+                    )
+                    return
+
             # Limpiar la mención del texto
             content = message.content.replace(f"<@{bot.user.id}>", "").strip()
             if not content:
