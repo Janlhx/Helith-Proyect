@@ -66,6 +66,40 @@ async def on_error(event, *args, **kwargs):
     logger.exception(f"Error en evento {event}")
 
 
+@bot.event
+async def on_message(message):
+    # Ignorar mensajes del propio bot
+    if message.author == bot.user:
+        return
+
+    # Ignorar mensajes de otros bots
+    if message.author.bot:
+        return
+
+    # Importaciones diferidas para evitar ciclos
+    from domains.bot.router import intent_router
+    from domains.conversation.service import conversation_service
+
+    # Clasificar intención
+    intent = intent_router.classify_intent(message)
+
+    if intent == "conversation":
+        # Respondemos si nos mencionan o es mensaje directo
+        if bot.user.mentioned_in(message) or isinstance(
+            message.channel, discord.DMChannel
+        ):
+            # Limpiar la mención del texto
+            content = message.content.replace(f"<@{bot.user.id}>", "").strip()
+            if not content:
+                content = "hola"  # Si solo nos mencionaron, saludamos
+
+            async with message.channel.typing():
+                response = await conversation_service.process_message(
+                    str(message.channel.id), str(message.author.id), content
+                )
+                await message.reply(response)
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     # Flask en un thread separado
@@ -74,4 +108,4 @@ if __name__ == "__main__":
     logger.info("Keep-alive server iniciado")
 
     # Bot en el thread principal
-    bot.run(settings.DISCORD_TOKEN)
+    bot.run(settings.DISCORD_TOKEN)
