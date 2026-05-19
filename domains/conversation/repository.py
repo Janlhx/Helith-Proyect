@@ -1,4 +1,3 @@
-from core.db.connection import get_supabase_client, get_sqlite_connection
 import logging
 
 logger = logging.getLogger("helith.conversation.repository")
@@ -11,6 +10,9 @@ class ConversationRepository:
     """
 
     def __init__(self):
+        # Importación diferida para evitar problemas de linter y circulares
+        from core.db.connection import get_supabase_client
+
         self.supabase = get_supabase_client()
 
     def save_message(
@@ -61,6 +63,8 @@ class ConversationRepository:
         self, channel_id: str, user_id: str, role: str, content: str
     ):
         """Guarda el mensaje en la base de datos SQLite local."""
+        from core.db.connection import get_sqlite_connection
+
         conn = get_sqlite_connection()
         if not conn:
             logger.critical("No se pudo conectar a SQLite de fallback.")
@@ -96,6 +100,8 @@ class ConversationRepository:
 
     def _get_history_sqlite(self, channel_id: str, limit: int = 10):
         """Recupera el historial de SQLite local."""
+        from core.db.connection import get_sqlite_connection
+
         conn = get_sqlite_connection()
         if not conn:
             return []
