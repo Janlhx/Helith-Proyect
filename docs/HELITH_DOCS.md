@@ -176,6 +176,11 @@ Router de Intención ──── clasificación determinista
 - Context window management con truncado inteligente por relevancia
 - Monitoreo predictivo con alertas preventivas
 
+### 6.5 Consideraciones Operacionales
+
+- **Health Check (Flask):** El health check no debe hacer queries a la base de datos, solo confirmar que el proceso está vivo y que el bot está conectado a Discord.
+- **Doble uso de UptimeRobot:** Se utiliza para mantener vivo el proceso en Render (evitando que se duerma) y para realizar pings periódicos a Supabase para evitar la pausa por inactividad después de 7 días.
+
 ---
 
 ## 7. Stack Tecnológico
@@ -191,10 +196,12 @@ Router de Intención ──── clasificación determinista
 | ML predictivo | scikit-learn / XGBoost | Predicción de progreso osu! |
 | Monitoreo de tokens | Modelo propio (scikit-learn) | Entrenado con datos generados por el propio bot |
 | LLMs | Gemini API, Anthropic API, Groq | Pool multi-proveedor |
-| Hosting del bot | Railway | Mejor DX que Render, deploy automático por branch |
+| Hosting del bot | Render | Free tier disponible, desplegado con Flask mínimo para health checks |
+| Web Server (Health Check) | Flask | Necesario para mantener vivo el proceso en el free tier de Render |
+| Monitoreo / Keep-alive | UptimeRobot | Evita que Render se duerma y que Supabase se pause por inactividad |
 | Gestión de dependencias | uv | Más rápido que pip, moderno |
 
-> **Nota:** PostgreSQL se mantiene como motor de base de datos. Supabase lo provee gestionado con ventajas adicionales (pgvector, dashboard, free tier).
+> **Nota:** PostgreSQL se mantiene como motor de base de datos. Supabase lo provee gestionado con ventajas adicionales (pgvector, dashboard, free tier). *Nota operacional:* Supabase pausa proyectos inactivos tras 7 días; se mitiga con pings de UptimeRobot.
 
 ---
 
@@ -207,7 +214,7 @@ helith/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml              # tests + lint en push/PR
-│       └── cd.yml              # deploy a Railway en merge a main/staging
+│       └── cd.yml              # deploy a Render en merge a main/staging
 ├── core/                       # infraestructura compartida (no es un dominio)
 │   ├── db/
 │   │   ├── connection.py       # conexión a Supabase
@@ -277,8 +284,8 @@ Se ejecuta en cada push y pull request:
 
 ### Pipeline CD (GitHub Actions — cd.yml)
 
-- Merge a `staging` → deploy automático al ambiente de staging en Railway
-- Merge a `main` → deploy automático a producción en Railway
+- Merge a `staging` → deploy automático al ambiente de staging en Render
+- Merge a `main` → deploy automático a producción en Render
 
 ### Tests
 
@@ -357,7 +364,7 @@ Objetivo: el bot está listo para operar en múltiples servidores de forma estab
 | Personalidad | Sarcástica, ácida, pasota | Reservada, directa, con profundidad |
 | Enfoque principal | osu! + conversación general | ML predictivo + conversación estable |
 | Arquitectura | Sin estructura definida | Domain-Driven Design |
-| Infraestructura | Render + Neon | Railway + Supabase |
+| Infraestructura | Render + Neon | Render + Supabase |
 | DevOps | Sin CI/CD | GitHub Actions + deploy automático por branch |
 
 ---
@@ -380,7 +387,7 @@ Esta sección documenta el razonamiento detrás de decisiones importantes. Útil
 | Decisión | Alternativas consideradas | Razón de la elección |
 |---|---|---|
 | Python como lenguaje principal | TypeScript, arquitectura mixta | Ecosistema ML insustituible. Complejidad de dos runtimes no justificada en esta etapa. |
-| Railway sobre Render | Render, Fly.io, VPS | Mejor DX, deploy automático por branch nativo, free tier adecuado. |
+| Render sobre Railway | Railway, Fly.io, VPS | Decisión de usar Render por disponibilidad y facilidad de uso con UptimeRobot para mantenerlo vivo. |
 | Supabase sobre Neon | Neon, ElephantSQL, Tembo | pgvector nativo elimina infraestructura separada para embeddings. Free tier más generoso. |
 | DDD sobre arquitectura por capas | Por capas, monorepo | Dominios bien definidos desde el inicio. Más intuitivo de navegar. Mejor alineación con lo aprendido en Ingeniería de Software. |
 | Router determinista, no agéntico | Sistema agéntico con LLM orquestador | Un orquestador LLM duplica el gasto de tokens antes de llegar a la funcionalidad real. Clasificación determinista es más robusta y económica. |
