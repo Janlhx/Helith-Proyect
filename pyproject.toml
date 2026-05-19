@@ -16,9 +16,7 @@ dependencies = [
 
 [tool.uv]
 package = false
-
-[dependency-groups]
-dev = [
+dev-dependencies = [
     "pytest>=8.0.0",
     "ruff>=0.3.0",
     "mypy>=1.8.0",
