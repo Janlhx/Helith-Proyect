@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
     GROQ_API_KEY: str = ""
+    TAVILY_API_KEY: str = ""
 
     # osu! API v2
     OSU_CLIENT_ID: int = 0

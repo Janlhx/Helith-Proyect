@@ -25,8 +25,7 @@ class OsuRepository:
                 data = snapshot.to_dict()
                 self.supabase.table("osu_snapshots").insert(data).execute()
                 logger.info(
-                    f"Snapshot de osu! para '{snapshot.username}' "
-                    "guardado en Supabase."
+                    f"Snapshot de osu! para '{snapshot.username}' guardado en Supabase."
                 )
                 return
             except Exception as e:
@@ -38,9 +37,7 @@ class OsuRepository:
         # Fallback local a SQLite
         self._save_sqlite(snapshot)
 
-    def get_history(
-        self, username: str, limit: int = 90
-    ) -> List[Dict[str, Any]]:
+    def get_history(self, username: str, limit: int = 90) -> List[Dict[str, Any]]:
         """Recupera los snapshots de progreso históricos de un jugador."""
         cleaned_username = username.strip().lower()
 
@@ -188,4 +185,3 @@ class OsuRepository:
 
 
 osu_repo = OsuRepository()
-

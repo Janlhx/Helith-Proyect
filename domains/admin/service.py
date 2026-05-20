@@ -8,32 +8,32 @@ class HelpDropdown(discord.ui.Select):
     def __init__(self):
         options = [
             discord.SelectOption(
-                label="Inicio",
-                description="Guía de interacción básica",
+                label="Home",
+                description="Basic interaction guide",
                 emoji="🏠",
                 value="home",
             ),
             discord.SelectOption(
-                label="Predicción osu!",
-                description="Modelo de regresión matemática",
+                label="osu! Prediction",
+                description="Mathematical regression model",
                 emoji="🎯",
                 value="osu",
             ),
             discord.SelectOption(
-                label="Métricas y Monitoreo",
-                description="Consumo y cuotas de servidor",
+                label="Metrics & Monitoring",
+                description="Server consumption and quotas",
                 emoji="📊",
                 value="monitoring",
             ),
             discord.SelectOption(
-                label="Conversación IA",
-                description="Personalidad y límites de Helith",
+                label="AI Conversation",
+                description="Helith's identity and limits",
                 emoji="💬",
                 value="chat",
             ),
         ]
         super().__init__(
-            placeholder="Selecciona una sección...",
+            placeholder="Select a module...",
             min_values=1,
             max_values=1,
             options=options,
@@ -57,22 +57,21 @@ class AdminService:
     def get_help_embed(self, section: str = "home") -> discord.Embed:
         if section == "home":
             embed = discord.Embed(
-                title="HELITH // MANUAL DE USUARIO v0.1.0",
+                title="HELITH // USER MANUAL v0.1.0",
                 description=(
-                    "Soy una inteligencia artificial analítica orientada a "
-                    "modelado predictivo de progreso de juego y diagnóstico "
-                    "de métricas de red.\n\n"
-                    "**Estatus:** ACTIVO\n"
-                    "**Prefijo Administrativo:** `h.`"
+                    "I am an analytical artificial intelligence designed for "
+                    "game progress predictive modeling and network metrics "
+                    "diagnostics.\n\n"
+                    "**Status:** ACTIVE\n"
+                    "**Primary Interface:** Slash Commands (`/`)"
                 ),
                 color=HELITH_COLOR,
             )
             embed.add_field(
-                name="🏠 Inicio",
+                name="🏠 Home",
                 value=(
-                    "Bienvenido al panel interactivo. Utiliza el menú "
-                    "desplegable a continuación para navegar por mis "
-                    "módulos operativos."
+                    "Welcome to the interactive panel. Use the dropdown menu "
+                    "below to navigate through my operational modules."
                 ),
                 inline=False,
             )
@@ -81,29 +80,27 @@ class AdminService:
 
         elif section == "osu":
             embed = discord.Embed(
-                title="🎯 Predicciones de osu! (ML)",
+                title="🎯 osu! Predictions (ML)",
                 description=(
-                    "Mi motor predictivo utiliza una regresión lineal OLS "
-                    "adaptativa para estimar cuánto tiempo le tomará a un "
-                    "jugador alcanzar un rango global específico."
+                    "My predictive engine uses an adaptive OLS linear regression "
+                    "to estimate how much time it will take a player to reach a "
+                    "specific global rank."
                 ),
                 color=HELITH_COLOR,
             )
             embed.add_field(
-                name="Mecanismo (Improvement Indicator)",
+                name="Mechanism (Improvement Indicator)",
                 value=(
-                    "Calculo un $ii$ comparando el tiempo de juego real "
-                    "vs estadístico. Esto acelera o desacelera la "
-                    "pendiente de predicción."
+                    "I calculate an $ii$ by comparing actual vs expected play time. "
+                    "This accelerates or dampens the prediction slope."
                 ),
                 inline=False,
             )
             embed.add_field(
-                name="Uso (Lenguaje Natural)",
+                name="Usage (Slash Command)",
                 value=(
-                    'Envíame un mensaje que contenga la palabra "osu" y una '
-                    "intención predictiva.\n\n**Ejemplo:**\n"
-                    "`Helith, ¿cuánto tardará mrekk en llegar al rank 1 en osu?`"
+                    "Use the native discord command:\n"
+                    "`/predict username:mrekk target_rank:1`"
                 ),
                 inline=False,
             )
@@ -111,30 +108,26 @@ class AdminService:
 
         elif section == "monitoring":
             embed = discord.Embed(
-                title="📊 Monitoreo y Métricas",
+                title="📊 Monitoring & Metrics",
                 description=(
-                    "Llevo un registro constante del uso de red, impactos "
-                    "al Rate Limit (Cooldowns) y consumo de tokens de "
-                    "los modelos LLM."
+                    "I keep a constant log of network usage, Rate Limit hits "
+                    "(Cooldowns), and LLM token consumption."
                 ),
                 color=HELITH_COLOR,
             )
             embed.add_field(
-                name="Comandos Integrados",
+                name="Integrated Commands",
                 value=(
-                    "No requieres acceder al dashboard web. Puedes "
-                    "preguntarme en el chat:\n\n"
-                    "`Helith, ¿cuáles son las métricas del servidor?`\n"
-                    "`h.help métricas`"
+                    "This command is restricted to Server Administrators:\n\n`/metrics`"
                 ),
                 inline=False,
             )
             embed.add_field(
-                name="Estados",
+                name="Health States",
                 value=(
                     "🟢 NORMAL\n"
-                    "🟡 ADVERTENCIA (Cooldown sugerido: 120s)\n"
-                    "🔴 CRÍTICO (Cooldown sugerido: 180s)"
+                    "🟡 WARNING (Suggested cooldown: 120s)\n"
+                    "🔴 CRITICAL (Suggested cooldown: 180s)"
                 ),
                 inline=False,
             )
@@ -142,49 +135,33 @@ class AdminService:
 
         elif section == "chat":
             embed = discord.Embed(
-                title="💬 Conversación Inteligente",
+                title="💬 Smart Conversation",
                 description=(
-                    "Mi personalidad es estricta, seca y matemática. No "
-                    "utilizo emojis alegremente ni relleno innecesario."
+                    "I am capable of holding natural conversations and adapting "
+                    "to the language you speak to me."
                 ),
                 color=HELITH_COLOR,
             )
             embed.add_field(
-                name="¿Cómo interactuar?",
+                name="How to interact?",
                 value=(
-                    "Mencióname (`@Helith`) o envíame un Mensaje Directo.\n\n"
-                    "**Ejemplo:**\n"
-                    "`@Helith dime tu opinión sobre la ineficiencia humana.`"
+                    "Mention me (`@Helith`) or send me a Direct Message.\n\n"
+                    "**Example:**\n"
+                    "`@Helith what's your opinion on human inefficiency?`"
                 ),
                 inline=False,
             )
             embed.add_field(
-                name="Límites",
+                name="Limits",
                 value=(
-                    "Tengo un límite estricto de **5 mensajes por minuto** "
-                    "por usuario, y **20 mensajes por minuto** por servidor."
+                    "I operate under a strict limit of **5 messages per minute** "
+                    "per user, and **20 messages per minute** per server."
                 ),
                 inline=False,
             )
             return embed
 
         return self.get_help_embed("home")
-
-    def get_specific_help(self, command: str) -> discord.Embed:
-        cmd = command.lower().strip()
-        if cmd in ["osu", "predict", "rango", "prediccion"]:
-            return self.get_help_embed("osu")
-        elif cmd in ["metricas", "monitoring", "tokens", "status", "consumo"]:
-            return self.get_help_embed("monitoring")
-        elif cmd in ["chat", "hablar", "conversacion", "ia"]:
-            return self.get_help_embed("chat")
-
-        embed = discord.Embed(
-            title="⚠️ Comando Desconocido",
-            description=f"No se encontró información para: `{command}`.",
-            color=0xFF0000,
-        )
-        return embed
 
 
 admin_service = AdminService()

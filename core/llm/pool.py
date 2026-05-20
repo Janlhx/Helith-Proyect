@@ -15,8 +15,7 @@ class LLMPool:
             and settings.GEMINI_API_KEY != "your_gemini_key"
         )
         self.groq_enabled = (
-            bool(settings.GROQ_API_KEY)
-            and settings.GROQ_API_KEY != "your_groq_key"
+            bool(settings.GROQ_API_KEY) and settings.GROQ_API_KEY != "your_groq_key"
         )
 
         logger.info(
@@ -70,8 +69,7 @@ class LLMPool:
                     return text
                 except Exception as e:
                     logger.error(
-                        f"Fallo en Groq con {model_name}: {e}. "
-                        "Pasando al siguiente..."
+                        f"Fallo en Groq con {model_name}: {e}. Pasando al siguiente..."
                     )
 
         raise Exception("Todos los modelos fallaron o no están configurados.")

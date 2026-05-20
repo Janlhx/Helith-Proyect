@@ -13,9 +13,7 @@ def get_supabase_client():
     try:
         from supabase import Client, create_client
     except ImportError:
-        logger.warning(
-            "Librería 'supabase' no instalada. Operando en modo fallback."
-        )
+        logger.warning("Librería 'supabase' no instalada. Operando en modo fallback.")
         return None
 
     if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
@@ -25,9 +23,7 @@ def get_supabase_client():
         return None
 
     try:
-        client: Client = create_client(
-            settings.SUPABASE_URL, settings.SUPABASE_KEY
-        )
+        client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
         return client
     except Exception as e:
         logger.error(f"Error al conectar a Supabase: {e}")
@@ -38,7 +34,8 @@ def get_sqlite_connection():
     """Retorna una conexión a la base de datos SQLite local."""
     db_path = os.environ.get("SQLITE_DB_PATH", "helith_fallback.db")
     try:
-        conn = sqlite3.connect(db_path)
+        # Aumentamos timeout a 30s para evitar problemas de bloqueo multi-hilo
+        conn = sqlite3.connect(db_path, timeout=30.0)
         # Retornar diccionarios en lugar de tuplas para mayor comodidad
         conn.row_factory = sqlite3.Row
         # Activar claves foráneas

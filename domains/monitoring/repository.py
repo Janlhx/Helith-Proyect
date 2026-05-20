@@ -20,9 +20,7 @@ class MonitoringRepository:
         """Guarda un registro de uso de tokens."""
         if self.supabase:
             try:
-                self.supabase.table("token_usage_logs").insert(
-                    log.to_dict()
-                ).execute()
+                self.supabase.table("token_usage_logs").insert(log.to_dict()).execute()
                 return
             except Exception as e:
                 logger.error(
@@ -47,9 +45,7 @@ class MonitoringRepository:
                 )
                 return response.data or []
             except Exception as e:
-                logger.error(
-                    f"Error al leer logs de Supabase: {e}. Usando fallback."
-                )
+                logger.error(f"Error al leer logs de Supabase: {e}. Usando fallback.")
 
         return self._get_usage_sqlite(days)
 
@@ -151,6 +147,7 @@ class MonitoringRepository:
         if self.supabase:
             try:
                 from datetime import datetime, timedelta
+
                 cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
                 response = (
                     self.supabase.table("token_usage_logs")
@@ -164,12 +161,14 @@ class MonitoringRepository:
 
         # Fallback a SQLite
         from core.db.connection import get_sqlite_connection
+
         conn = get_sqlite_connection()
         if not conn:
             return []
         try:
             with conn:
                 from datetime import datetime, timedelta
+
                 cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
                 cursor = conn.execute(
                     "SELECT server_id, total_tokens, timestamp "
@@ -203,6 +202,7 @@ class MonitoringRepository:
 
         # Fallback a SQLite
         from core.db.connection import get_sqlite_connection
+
         conn = get_sqlite_connection()
         if not conn:
             return
@@ -232,6 +232,7 @@ class MonitoringRepository:
         if self.supabase:
             try:
                 from datetime import datetime, timedelta
+
                 cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
                 response = (
                     self.supabase.table("rate_limit_hits")
@@ -245,12 +246,14 @@ class MonitoringRepository:
 
         # Fallback a SQLite
         from core.db.connection import get_sqlite_connection
+
         conn = get_sqlite_connection()
         if not conn:
             return []
         try:
             with conn:
                 from datetime import datetime, timedelta
+
                 cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
                 cursor = conn.execute(
                     "SELECT server_id, user_id, timestamp "
