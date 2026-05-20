@@ -82,3 +82,21 @@ def test_needs_web_search_no_trigger():
     assert intent_router.needs_web_search("hola, cómo estás?") is False
     assert intent_router.needs_web_search("me gusta comer pizza") is False
     assert intent_router.needs_web_search("cuéntame un chiste") is False
+
+
+def test_needs_web_search_discord_examples():
+    """Casos reales reportados en Discord."""
+    assert (
+        intent_router.needs_web_search(
+            "puedes buscar cual fue la canción mas reciente que sacó shakira?"
+        )
+        is True
+    )
+    assert (
+        intent_router.needs_web_search(
+            "busca cual es el album mas reciente de calvin harris"
+        )
+        is True
+    )
+    assert intent_router.needs_web_search("helith en qué año estamos?") is True
+    assert intent_router.needs_web_search("puedes buscar en que año estamos?") is True
