@@ -11,7 +11,7 @@ class ConversationService:
     """Orquesta la lógica de conversación del bot."""
 
     async def process_message(
-        self, channel_id: str, user_id: str, message_content: str
+        self, channel_id: str, server_id: str, user_id: str, message_content: str
     ) -> str:
         """Procesa un mensaje de conversación.
 
@@ -49,7 +49,7 @@ class ConversationService:
             response = await llm_pool.generate_response(
                 prompt=full_prompt,
                 system_prompt=HELITH_PERSONALITY,
-                server_id=channel_id,
+                server_id=server_id,
                 user_id=user_id,
             )
 

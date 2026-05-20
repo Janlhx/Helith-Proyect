@@ -150,20 +150,37 @@ async def on_message(message):
             content = "hola"  # Si solo nos mencionaron, saludamos
 
         # Derivar según la intención clasificada
-        if intent == "osu":
-            from domains.osu.router import osu_router
-            async with message.channel.typing():
+        response = None
+        server_id_str = str(message.guild.id) if message.guild else "DM"
+
+        async with message.channel.typing():
+            if intent == "osu":
+                from domains.osu.router import osu_router
                 response = await osu_router.handle_message(
                     str(message.channel.id), str(message.author.id), content
                 )
-                await message.reply(response)
-        else:
-            # Por defecto: Conversación
-            from domains.conversation.service import conversation_service
-            async with message.channel.typing():
-                response = await conversation_service.process_message(
-                    str(message.channel.id), str(message.author.id), content
+            elif intent == "monitoring":
+                from domains.monitoring.router import monitoring_router
+                response = await monitoring_router.handle_message(
+                    server_id_str, str(message.author.id), content
                 )
+            elif intent == "admin":
+                from domains.admin.router import admin_router
+                response = await admin_router.handle_message(message, content)
+            else:
+                # Por defecto: Conversación
+                from domains.conversation.service import conversation_service
+                response = await conversation_service.process_message(
+                    str(message.channel.id),
+                    server_id_str,
+                    str(message.author.id),
+                    content,
+                )
+
+        if response:
+            if isinstance(response, dict):
+                await message.reply(**response)
+            else:
                 await message.reply(response)
 
 
