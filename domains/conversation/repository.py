@@ -309,7 +309,7 @@ class ConversationRepository:
         magnitude_v2 = sum(b * b for b in v2) ** 0.5
         if magnitude_v1 == 0 or magnitude_v2 == 0:
             return 0.0
-        return dot_product / (magnitude_v1 * magnitude_v2)
+        return float(dot_product / (magnitude_v1 * magnitude_v2))
 
 
 conversation_repo = ConversationRepository()
