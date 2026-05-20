@@ -27,7 +27,7 @@ async def test_process_message_success(mock_llm_pool, mock_repo, service):
     )
 
     # 2. Ejecutar
-    response = await service.process_message("canal_1", "user_1", "¿qué tal?")
+    response = await service.process_message("canal_1", "server_1", "user_1", "¿qué tal?")
 
     # 3. Verificar resultados
     assert response == "todo bien por acá, tranquila"
@@ -61,7 +61,7 @@ async def test_process_message_fallback_error(mock_llm_pool, mock_repo, service)
     )
 
     # 2. Ejecutar
-    response = await service.process_message("canal_1", "user_1", "mensaje")
+    response = await service.process_message("canal_1", "server_1", "user_1", "mensaje")
 
     # 3. Verificar que responde la frase por defecto y no rompe el programa
     assert response == "Me cuesta procesar eso ahora mismo. Inténtalo de nuevo."
