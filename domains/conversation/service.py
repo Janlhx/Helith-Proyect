@@ -54,11 +54,14 @@ class ConversationService:
 
         # 3. Consultas en tiempo real (Tavily) si es necesario
         search_context = ""
-        if intent_router.needs_web_search(message_content):
+        search_triggered = intent_router.needs_web_search(message_content)
+        if search_triggered:
+            search_query = intent_router.build_search_query(message_content)
             logger.info(
-                f"Trigger de búsqueda Tavily activado para: '{message_content}'"
+                f"Trigger Tavily activado. Query: '{search_query}' "
+                f"(original: '{message_content}')"
             )
-            search_context = await tavily_search.search(message_content)
+            search_context = await tavily_search.search(search_query)
 
         # 4. Guardar mensaje del usuario en historial y memorias
         conversation_repo.save_message(channel_id, user_id, "user", message_content)
@@ -88,14 +91,21 @@ class ConversationService:
                 f"Usa esto como memoria si te preguntan sobre interacciones pasadas. "
                 f"Sigue siendo concisa."
             )
-        if search_context:
-            system_prompt += (
-                f"\n\nINFORMACIÓN EN TIEMPO REAL RECIENTE (Tavily):\n"
-                f"{search_context}\n"
-                f"Usa esta información concisa para responder con "
-                f"datos actuales si es relevante. "
-                f"Sé extremadamente breve (máximo 3 líneas)."
-            )
+        if search_triggered:
+            if search_context:
+                system_prompt += (
+                    f"\n\nINFORMACIÓN EN TIEMPO REAL (Tavily — ya buscaste en internet):\n"
+                    f"{search_context}\n"
+                    f"OBLIGATORIO: responde usando estos datos. "
+                    f"No digas que no tienes acceso a información actual ni que no puedes buscar. "
+                    f"Sé breve (máximo 3 líneas)."
+                )
+            else:
+                system_prompt += (
+                    "\n\nBÚSQUEDA WEB: el usuario pidió datos actuales pero la búsqueda "
+                    "no devolvió resultados (API no configurada o error). "
+                    "Dilo en una frase honesta; no inventes fechas, álbumes ni canciones."
+                )
 
         logger.info(
             f"Generando respuesta para canal {channel_id} con "
