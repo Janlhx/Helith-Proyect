@@ -102,86 +102,85 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # Importaciones diferidas para evitar ciclos
     from domains.bot.router import intent_router
-
-    # Clasificar intención
     intent = intent_router.classify_intent(message)
 
-    # Respondemos si nos mencionan o es mensaje directo
     is_mentioned = bot.user.mentioned_in(message)
     is_dm = isinstance(message.channel, discord.DMChannel)
 
-    if is_mentioned or is_dm:
-        # 1. Aplicar cooldown por usuario
-        bucket_user = user_cooldown.get_bucket(message)
-        retry_user = bucket_user.update_rate_limit()
-        if retry_user:
+    # Si la intención es meramente conversacional, exigimos mención o DM
+    if intent == "conversation" and not (is_mentioned or is_dm):
+        return
+
+    # 1. Aplicar cooldown por usuario
+    bucket_user = user_cooldown.get_bucket(message)
+    retry_user = bucket_user.update_rate_limit()
+    if retry_user:
+        from domains.monitoring.service import monitoring_service
+        monitoring_service.record_rate_limit(
+            str(message.guild.id) if message.guild else "DM",
+            str(message.author.id)
+        )
+        await message.reply(
+            f"Oye, relájate un poco. Estás hablando demasiado rápido. "
+            f"Inténtalo de nuevo en {retry_user:.1f} segundos."
+        )
+        return
+
+    # 2. Aplicar cooldown por servidor (solo si no es DM)
+    if not is_dm:
+        bucket_guild = guild_cooldown.get_bucket(message)
+        retry_guild = bucket_guild.update_rate_limit()
+        if retry_guild:
             from domains.monitoring.service import monitoring_service
             monitoring_service.record_rate_limit(
-                str(message.guild.id) if message.guild else "DM",
+                str(message.guild.id),
                 str(message.author.id)
             )
             await message.reply(
-                f"Oye, relájate un poco. Estás hablando demasiado rápido. "
-                f"Inténtalo de nuevo en {retry_user:.1f} segundos."
+                f"Este servidor está muy ruidoso. Me están saturando. "
+                f"Inténtalo de nuevo en {retry_guild:.1f} segundos."
             )
             return
 
-        # 2. Aplicar cooldown por servidor (solo si no es DM)
-        if not is_dm:
-            bucket_guild = guild_cooldown.get_bucket(message)
-            retry_guild = bucket_guild.update_rate_limit()
-            if retry_guild:
-                from domains.monitoring.service import monitoring_service
-                monitoring_service.record_rate_limit(
-                    str(message.guild.id),
-                    str(message.author.id)
-                )
-                await message.reply(
-                    f"Este servidor está muy ruidoso. Me están saturando. "
-                    f"Inténtalo de nuevo en {retry_guild:.1f} segundos."
-                )
-                return
+    # Limpiar la mención del texto
+    content = message.content.replace(f"<@{bot.user.id}>", "").strip()
+    if not content:
+        content = "hola"  # Si solo nos mencionaron, saludamos
 
-        # Limpiar la mención del texto
-        content = message.content.replace(f"<@{bot.user.id}>", "").strip()
-        if not content:
-            content = "hola"  # Si solo nos mencionaron, saludamos
+    # Derivar según la intención clasificada
+    response = None
+    server_id_str = str(message.guild.id) if message.guild else "DM"
 
-        # Derivar según la intención clasificada
-        response = None
-        server_id_str = str(message.guild.id) if message.guild else "DM"
+    async with message.channel.typing():
+        if intent == "osu":
+            from domains.osu.router import osu_router
+            response = await osu_router.handle_message(
+                str(message.channel.id), str(message.author.id), content
+            )
+        elif intent == "monitoring":
+            from domains.monitoring.router import monitoring_router
+            response = await monitoring_router.handle_message(
+                server_id_str, str(message.author.id), content
+            )
+        elif intent == "admin":
+            from domains.admin.router import admin_router
+            response = await admin_router.handle_message(message, content)
+        else:
+            # Por defecto: Conversación
+            from domains.conversation.service import conversation_service
+            response = await conversation_service.process_message(
+                str(message.channel.id),
+                server_id_str,
+                str(message.author.id),
+                content,
+            )
 
-        async with message.channel.typing():
-            if intent == "osu":
-                from domains.osu.router import osu_router
-                response = await osu_router.handle_message(
-                    str(message.channel.id), str(message.author.id), content
-                )
-            elif intent == "monitoring":
-                from domains.monitoring.router import monitoring_router
-                response = await monitoring_router.handle_message(
-                    server_id_str, str(message.author.id), content
-                )
-            elif intent == "admin":
-                from domains.admin.router import admin_router
-                response = await admin_router.handle_message(message, content)
-            else:
-                # Por defecto: Conversación
-                from domains.conversation.service import conversation_service
-                response = await conversation_service.process_message(
-                    str(message.channel.id),
-                    server_id_str,
-                    str(message.author.id),
-                    content,
-                )
-
-        if response:
-            if isinstance(response, dict):
-                await message.reply(**response)
-            else:
-                await message.reply(response)
+    if response:
+        if isinstance(response, dict):
+            await message.reply(**response)
+        else:
+            await message.reply(response)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
