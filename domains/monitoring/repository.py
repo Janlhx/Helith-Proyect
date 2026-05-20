@@ -172,11 +172,16 @@ class MonitoringRepository:
                 from datetime import datetime, timedelta
                 cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
                 cursor = conn.execute(
-                    "SELECT server_id, total_tokens, timestamp FROM token_usage_logs WHERE timestamp >= ?",
+                    "SELECT server_id, total_tokens, timestamp "
+                    "FROM token_usage_logs WHERE timestamp >= ?",
                     (cutoff,),
                 )
                 return [
-                    {"server_id": r["server_id"], "total_tokens": r["total_tokens"], "timestamp": r["timestamp"]}
+                    {
+                        "server_id": r["server_id"],
+                        "total_tokens": r["total_tokens"],
+                        "timestamp": r["timestamp"],
+                    }
                     for r in cursor.fetchall()
                 ]
         except Exception as e:
@@ -248,11 +253,16 @@ class MonitoringRepository:
                 from datetime import datetime, timedelta
                 cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
                 cursor = conn.execute(
-                    "SELECT server_id, user_id, timestamp FROM rate_limit_hits WHERE timestamp >= ?",
+                    "SELECT server_id, user_id, timestamp "
+                    "FROM rate_limit_hits WHERE timestamp >= ?",
                     (cutoff,),
                 )
                 return [
-                    {"server_id": r["server_id"], "user_id": r["user_id"], "timestamp": r["timestamp"]}
+                    {
+                        "server_id": r["server_id"],
+                        "user_id": r["user_id"],
+                        "timestamp": r["timestamp"],
+                    }
                     for r in cursor.fetchall()
                 ]
         except Exception as e:

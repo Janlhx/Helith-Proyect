@@ -1,9 +1,12 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
+
 @dataclass
 class OsuSnapshot:
-    """Registro del estado de progreso de rango y rendimiento de un jugador en un día específico."""
+    """Registro del estado de progreso de rango y rendimiento de un jugador
+    en un día específico.
+    """
 
     osu_id: int
     username: str
@@ -11,7 +14,9 @@ class OsuSnapshot:
     pp: float
     play_time: int  # En segundos
     improvement_indicator: float
-    recorded_at: str = field(default_factory=lambda: datetime.utcnow().strftime("%Y-%m-%d"))
+    recorded_at: str = field(
+        default_factory=lambda: datetime.utcnow().strftime("%Y-%m-%d")
+    )
     id: int | None = None
 
     def to_dict(self) -> dict:
@@ -28,3 +33,4 @@ class OsuSnapshot:
         if self.id is not None:
             data["id"] = self.id
         return data
+

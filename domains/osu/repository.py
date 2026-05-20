@@ -1,18 +1,21 @@
 import logging
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from domains.osu.models import OsuSnapshot
 
 logger = logging.getLogger("helith.osu.repository")
 
+
 class OsuRepository:
     """Maneja la persistencia de los snapshots de progreso osu!.
-    
+
     Usa Supabase como base principal y SQLite como fallback local resiliente.
     """
 
     def __init__(self):
         # Importación diferida para evitar ciclos y opcionalidad
         from core.db.connection import get_supabase_client
+
         self.supabase = get_supabase_client()
 
     def save_snapshot(self, snapshot: OsuSnapshot) -> None:
@@ -21,23 +24,29 @@ class OsuRepository:
             try:
                 data = snapshot.to_dict()
                 self.supabase.table("osu_snapshots").insert(data).execute()
-                logger.info(f"Snapshot de osu! para '{snapshot.username}' guardado en Supabase.")
+                logger.info(
+                    f"Snapshot de osu! para '{snapshot.username}' "
+                    "guardado en Supabase."
+                )
                 return
             except Exception as e:
                 logger.error(
-                    f"Error al guardar snapshot en Supabase: {e}. Usando fallback local a SQLite."
+                    f"Error al guardar snapshot en Supabase: {e}. "
+                    "Usando fallback local a SQLite."
                 )
 
         # Fallback local a SQLite
         self._save_sqlite(snapshot)
 
-    def get_history(self, username: str, limit: int = 90) -> List[Dict[str, Any]]:
+    def get_history(
+        self, username: str, limit: int = 90
+    ) -> List[Dict[str, Any]]:
         """Recupera los snapshots de progreso históricos de un jugador."""
         cleaned_username = username.strip().lower()
-        
+
         if self.supabase:
             try:
-                # Consultamos de forma que coincida sin distinguir mayúsculas/minúsculas
+                # Consultamos sin distinguir mayúsculas/minúsculas
                 response = (
                     self.supabase.table("osu_snapshots")
                     .select("*")
@@ -46,12 +55,13 @@ class OsuRepository:
                     .limit(limit)
                     .execute()
                 )
-                
-                # Devolvemos cronológicamente (más antiguos primero) para la regresión
+
+                # Devolvemos cronológicamente (más antiguos primero)
                 return list(reversed(response.data))
             except Exception as e:
                 logger.error(
-                    f"Error al leer snapshots de Supabase: {e}. Usando fallback local a SQLite."
+                    f"Error al leer snapshots de Supabase: {e}. "
+                    "Usando fallback local a SQLite."
                 )
 
         # Fallback local a SQLite
@@ -63,7 +73,9 @@ class OsuRepository:
 
         conn = get_sqlite_connection()
         if not conn:
-            logger.critical("No se pudo conectar a SQLite para persistencia local de osu!.")
+            logger.critical(
+                "No se pudo conectar a SQLite para persistencia local de osu!."
+            )
             return
 
         try:
@@ -84,17 +96,18 @@ class OsuRepository:
                     )
                 """
                 )
-                
+
                 data = snapshot.to_dict()
                 conn.execute(
                     """
                     INSERT INTO osu_snapshots 
-                    (osu_id, username, global_rank, pp, play_time, improvement_indicator, recorded_at)
+                    (osu_id, username, global_rank, pp, play_time, 
+                     improvement_indicator, recorded_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         data["osu_id"],
-                        data["username"].lower(),  # Guardar en minúsculas para búsquedas ilike
+                        data["username"].lower(),  # Búsquedas case-insensitive
                         data["global_rank"],
                         data["pp"],
                         data["play_time"],
@@ -102,13 +115,18 @@ class OsuRepository:
                         data["recorded_at"],
                     ),
                 )
-                logger.info(f"Snapshot de osu! para '{snapshot.username}' guardado en SQLite local.")
+                logger.info(
+                    f"Snapshot de osu! para '{snapshot.username}' "
+                    "guardado en SQLite local."
+                )
         except Exception as e:
             logger.error(f"Error al escribir snapshot en SQLite: {e}")
         finally:
             conn.close()
 
-    def _get_history_sqlite(self, username: str, limit: int = 90) -> List[Dict[str, Any]]:
+    def _get_history_sqlite(
+        self, username: str, limit: int = 90
+    ) -> List[Dict[str, Any]]:
         """Recupera el historial de snapshots desde SQLite local."""
         from core.db.connection import get_sqlite_connection
 
@@ -143,21 +161,23 @@ class OsuRepository:
                     (username, limit),
                 )
                 rows = cursor.fetchall()
-                
+
                 # Mapear a diccionarios compatibles
                 history = []
                 for row in rows:
-                    history.append({
-                        "id": row["id"],
-                        "osu_id": row["osu_id"],
-                        "username": row["username"],
-                        "global_rank": row["global_rank"],
-                        "pp": row["pp"],
-                        "play_time": row["play_time"],
-                        "improvement_indicator": row["improvement_indicator"],
-                        "recorded_at": row["recorded_at"],
-                    })
-                
+                    history.append(
+                        {
+                            "id": row["id"],
+                            "osu_id": row["osu_id"],
+                            "username": row["username"],
+                            "global_rank": row["global_rank"],
+                            "pp": row["pp"],
+                            "play_time": row["play_time"],
+                            "improvement_indicator": row["improvement_indicator"],
+                            "recorded_at": row["recorded_at"],
+                        }
+                    )
+
                 # Devolvemos cronológicamente (más antiguo al principio)
                 return list(reversed(history))
         except Exception as e:
@@ -166,4 +186,6 @@ class OsuRepository:
         finally:
             conn.close()
 
+
 osu_repo = OsuRepository()
+
