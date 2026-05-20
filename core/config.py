@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     GROQ_API_KEY: str = ""
 
+    # osu! API v2
+    OSU_CLIENT_ID: int = 0
+    OSU_CLIENT_SECRET: str = ""
+    OSU_MOCK_MODE: bool = False
+
     # Entorno
     ENVIRONMENT: str = "development"  # development | staging | production
 

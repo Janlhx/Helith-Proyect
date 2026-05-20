@@ -104,43 +104,62 @@ async def on_message(message):
 
     # Importaciones diferidas para evitar ciclos
     from domains.bot.router import intent_router
-    from domains.conversation.service import conversation_service
 
     # Clasificar intención
     intent = intent_router.classify_intent(message)
 
-    if intent == "conversation":
-        # Respondemos si nos mencionan o es mensaje directo
-        is_mentioned = bot.user.mentioned_in(message)
-        is_dm = isinstance(message.channel, discord.DMChannel)
+    # Respondemos si nos mencionan o es mensaje directo
+    is_mentioned = bot.user.mentioned_in(message)
+    is_dm = isinstance(message.channel, discord.DMChannel)
 
-        if is_mentioned or is_dm:
-            # 1. Aplicar cooldown por usuario
-            bucket_user = user_cooldown.get_bucket(message)
-            retry_user = bucket_user.update_rate_limit()
-            if retry_user:
+    if is_mentioned or is_dm:
+        # 1. Aplicar cooldown por usuario
+        bucket_user = user_cooldown.get_bucket(message)
+        retry_user = bucket_user.update_rate_limit()
+        if retry_user:
+            from domains.monitoring.service import monitoring_service
+            monitoring_service.record_rate_limit(
+                str(message.guild.id) if message.guild else "DM",
+                str(message.author.id)
+            )
+            await message.reply(
+                f"Oye, relájate un poco. Estás hablando demasiado rápido. "
+                f"Inténtalo de nuevo en {retry_user:.1f} segundos."
+            )
+            return
+
+        # 2. Aplicar cooldown por servidor (solo si no es DM)
+        if not is_dm:
+            bucket_guild = guild_cooldown.get_bucket(message)
+            retry_guild = bucket_guild.update_rate_limit()
+            if retry_guild:
+                from domains.monitoring.service import monitoring_service
+                monitoring_service.record_rate_limit(
+                    str(message.guild.id),
+                    str(message.author.id)
+                )
                 await message.reply(
-                    f"Oye, relájate un poco. Estás hablando demasiado rápido. "
-                    f"Inténtalo de nuevo en {retry_user:.1f} segundos."
+                    f"Este servidor está muy ruidoso. Me están saturando. "
+                    f"Inténtalo de nuevo en {retry_guild:.1f} segundos."
                 )
                 return
 
-            # 2. Aplicar cooldown por servidor (solo si no es DM)
-            if not is_dm:
-                bucket_guild = guild_cooldown.get_bucket(message)
-                retry_guild = bucket_guild.update_rate_limit()
-                if retry_guild:
-                    await message.reply(
-                        f"Este servidor está muy ruidoso. Me están saturando. "
-                        f"Inténtalo de nuevo en {retry_guild:.1f} segundos."
-                    )
-                    return
+        # Limpiar la mención del texto
+        content = message.content.replace(f"<@{bot.user.id}>", "").strip()
+        if not content:
+            content = "hola"  # Si solo nos mencionaron, saludamos
 
-            # Limpiar la mención del texto
-            content = message.content.replace(f"<@{bot.user.id}>", "").strip()
-            if not content:
-                content = "hola"  # Si solo nos mencionaron, saludamos
-
+        # Derivar según la intención clasificada
+        if intent == "osu":
+            from domains.osu.router import osu_router
+            async with message.channel.typing():
+                response = await osu_router.handle_message(
+                    str(message.channel.id), str(message.author.id), content
+                )
+                await message.reply(response)
+        else:
+            # Por defecto: Conversación
+            from domains.conversation.service import conversation_service
             async with message.channel.typing():
                 response = await conversation_service.process_message(
                     str(message.channel.id), str(message.author.id), content
