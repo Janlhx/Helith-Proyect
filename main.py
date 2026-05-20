@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import threading
 
 import discord
@@ -149,7 +150,7 @@ async def on_message(message):
     content = message.content.strip()
 
     # Comando oculto para sincronizar comandos slash
-    if content == "h.sync":
+    if content.startswith("h.sync"):
         # Protección de seguridad: solo el dueño del bot puede sincronizar
         if not await bot.is_owner(message.author):
             await message.reply(
@@ -157,10 +158,28 @@ async def on_message(message):
             )
             return
         try:
-            synced = await bot.tree.sync()
-            await message.reply(
-                f"Sincronizados {len(synced)} comandos slash globalmente."
-            )
+            parts = content.split()
+            is_global = len(parts) > 1 and parts[1].lower() == "global"
+
+            if is_global:
+                synced = await bot.tree.sync()
+                await message.reply(
+                    f"Sincronizados {len(synced)} comandos slash globalmente."
+                )
+            else:
+                if message.guild:
+                    bot.tree.copy_global_to(guild=message.guild)
+                    synced = await bot.tree.sync(guild=message.guild)
+                    await message.reply(
+                        f"Sincronizados {len(synced)} comandos slash de "
+                        f"manera instantánea para este servidor "
+                        f"({message.guild.name})."
+                    )
+                else:
+                    await message.reply(
+                        "Este comando debe ser usado dentro de un servidor "
+                        "para sincronizar localmente, o usa `h.sync global`."
+                    )
         except Exception as e:
             await message.reply(f"Error sincronizando comandos: {e}")
         return
@@ -207,8 +226,8 @@ async def on_message(message):
             )
             return
 
-    # Limpiar la mención del texto
-    content = message.content.replace(f"<@{bot.user.id}>", "").strip()
+    # Limpiar la mención del texto de manera robusta
+    content = re.sub(rf"<@!?{bot.user.id}>", "", message.content).strip()
     if not content:
         content = "hola"  # Si solo nos mencionaron, saludamos
 

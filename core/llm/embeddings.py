@@ -24,9 +24,10 @@ async def generate_embedding(text: str) -> list[float]:
         genai.configure(api_key=settings.GEMINI_API_KEY)
         # Usamos el modelo moderno recomendado de 768 dimensiones
         result = await genai.embed_content_async(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-2",
             content=text,
             task_type="retrieval_query",
+            output_dimensionality=768,
         )
         # El resultado suele retornar una lista flotante
         return result["embedding"]

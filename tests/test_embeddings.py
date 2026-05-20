@@ -29,9 +29,10 @@ async def test_generate_embedding_success(mock_embed, mock_settings):
     assert embedding[0] == 0.1
     assert embedding[1] == 0.2
     mock_embed.assert_called_once_with(
-        model="models/text-embedding-004",
+        model="models/gemini-embedding-2",
         content="hola",
         task_type="retrieval_query",
+        output_dimensionality=768,
     )
 
 
