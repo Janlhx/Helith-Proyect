@@ -75,12 +75,9 @@ class MonitoringService:
         logs_7d = monitoring_repo.get_usage_last_days(7)
 
         model_logs = [
-            entry for entry in logs_7d
-            if entry.get("model_name") == model_name
+            entry for entry in logs_7d if entry.get("model_name") == model_name
         ]
-        tokens_7d = sum(
-            entry.get("total_tokens", 0) for entry in model_logs
-        )
+        tokens_7d = sum(entry.get("total_tokens", 0) for entry in model_logs)
         avg_daily = tokens_7d / 7 if tokens_7d > 0 else 0
 
         daily_limit = MODEL_DAILY_LIMITS.get(model_name, 500_000)
@@ -106,14 +103,14 @@ class MonitoringService:
             "avg_daily_tokens": round(avg_daily),
             "daily_limit": daily_limit,
             "pct_used": round(pct_used * 100, 1),
-            "days_until_exhaustion": (
-                round(days_until, 1) if days_until else None
-            ),
+            "days_until_exhaustion": (round(days_until, 1) if days_until else None),
             "alert": alert,
             "message": (
-                f"⚠️ Alerta: consumiendo el {round(pct_used*100,1)}% del límite diario."
+                f"⚠️ Alerta: consumiendo el {round(pct_used * 100, 1)}% "
+                "del límite diario."
                 if alert
-                else f"✅ Consumo normal: {round(pct_used*100,1)}% del límite diario."
+                else f"✅ Consumo normal: {round(pct_used * 100, 1)}% "
+                "del límite diario."
             ),
         }
 
@@ -182,7 +179,6 @@ class MonitoringService:
                 )
 
             analysis[srv] = {
-
                 "server_id": srv,
                 "total_tokens": data["total_tokens"],
                 "avg_tokens_per_day": round(avg_tokens),
@@ -190,7 +186,7 @@ class MonitoringService:
                 "avg_messages_per_day": round(avg_msg, 1),
                 "rate_limit_hits": data["rate_limits"],
                 "status": status,
-                "recommended_cooldown": recommendation
+                "recommended_cooldown": recommendation,
             }
 
         return analysis

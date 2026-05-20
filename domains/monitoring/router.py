@@ -5,28 +5,32 @@ import discord
 from domains.monitoring.service import monitoring_service
 
 logger = logging.getLogger("helith.monitoring.router")
-
 HELITH_COLOR = 0x00F0FF
 
 
 class MonitoringRouter:
-    """Enruta intenciones de monitoreo (métricas)."""
+    """Enruta interacciones de monitoreo (métricas) vía Slash Commands."""
 
-    async def handle_message(
-        self, server_id: str, user_id: str, content: str
-    ) -> dict | str:
-        """Extrae el reporte del servidor y genera un Embed rico en Discord."""
+    async def handle_slash_metrics(
+        self, interaction: discord.Interaction, server_id: str, user_id: str
+    ):
+        """Extrae el reporte del servidor y genera un Embed rico en Discord
+        de forma invisible (ephemeral).
+        """
         try:
             logger.info(
-                f"MonitoringRouter procesando métricas para servidor {server_id}"
+                f"MonitoringRouter procesando métricas slash para servidor {server_id}"
             )
             report = monitoring_service.get_full_report()
             server_usage = report.get("server_usage_analysis", {}).get(server_id)
 
             if not server_usage:
-                return "Aún no hay métricas registradas para este servidor."
+                await interaction.response.send_message(
+                    "Aún no hay métricas registradas para este servidor.",
+                    ephemeral=True,
+                )
+                return
 
-            # Construir el Embed
             status = server_usage.get("status", "NORMAL")
             if status == "NORMAL":
                 status_emoji = "🟢"
@@ -66,11 +70,13 @@ class MonitoringRouter:
                 inline=False,
             )
 
-            return {"embed": embed}
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
             logger.error(f"Error en MonitoringRouter: {e}")
-            return "No pude extraer las métricas de red en este momento."
+            await interaction.response.send_message(
+                "No pude extraer las métricas de red en este momento.", ephemeral=True
+            )
 
 
 monitoring_router = MonitoringRouter()

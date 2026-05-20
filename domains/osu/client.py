@@ -32,11 +32,7 @@ class OsuApiClient:
     @property
     def is_mock_enabled(self) -> bool:
         """Determina si debemos operar en modo simulado."""
-        return (
-            settings.OSU_MOCK_MODE
-            or not self.client_id
-            or not self.client_secret
-        )
+        return settings.OSU_MOCK_MODE or not self.client_id or not self.client_secret
 
     async def _get_access_token(self, session: aiohttp.ClientSession) -> str:
         """Obtiene o refresca el token de acceso OAuth2."""
@@ -91,13 +87,9 @@ class OsuApiClient:
                     "Accept": "application/json",
                 }
 
-                async with session.get(
-                    url, headers=headers, params=params
-                ) as response:
+                async with session.get(url, headers=headers, params=params) as response:
                     if response.status == 404:
-                        logger.warning(
-                            f"Usuario de osu! no encontrado: '{username}'"
-                        )
+                        logger.warning(f"Usuario de osu! no encontrado: '{username}'")
                         return None
                     elif response.status != 200:
                         text = await response.text()
@@ -138,9 +130,7 @@ class OsuApiClient:
                     }
 
         except Exception as e:
-            logger.exception(
-                f"Excepción al consultar osu! API para '{username}': {e}"
-            )
+            logger.exception(f"Excepción al consultar osu! API para '{username}': {e}")
             return None
 
     def _generate_mock_user_data(self, username: str) -> Dict[str, Any]:
@@ -151,9 +141,7 @@ class OsuApiClient:
         en pruebas.
         """
         # Crear un seed determinista basado en el nombre de usuario
-        hash_val = int(
-            hashlib.md5(username.lower().encode("utf-8")).hexdigest(), 16
-        )
+        hash_val = int(hashlib.md5(username.lower().encode("utf-8")).hexdigest(), 16)
         rng = random.Random(hash_val)
 
         # Generar estadísticas deterministas basadas en el hash
@@ -189,9 +177,7 @@ class OsuApiClient:
             # Añadir pequeña fluctuación diaria
             fluctuation = rng.randint(-15, 15)
             # Cambiar rango con la tendencia general
-            current_step_rank += (
-                int(rng.uniform(2, 30) * trend_direction) + fluctuation
-            )
+            current_step_rank += int(rng.uniform(2, 30) * trend_direction) + fluctuation
             current_step_rank = max(1, current_step_rank)
             history.append(current_step_rank)
 
@@ -209,4 +195,3 @@ class OsuApiClient:
 
 
 osu_api_client = OsuApiClient()
-

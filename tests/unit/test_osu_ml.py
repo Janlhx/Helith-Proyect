@@ -96,4 +96,3 @@ def test_osu_repository_sqlite_fallback():
     assert last_snapshot["global_rank"] == 1500
     assert abs(last_snapshot["pp"] - 9000.0) < 0.1
     assert abs(last_snapshot["improvement_indicator"] - 1.25) < 0.01
-

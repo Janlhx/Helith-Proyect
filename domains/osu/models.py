@@ -33,4 +33,3 @@ class OsuSnapshot:
         if self.id is not None:
             data["id"] = self.id
         return data
-

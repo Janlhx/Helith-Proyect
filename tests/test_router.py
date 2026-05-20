@@ -1,35 +1,59 @@
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+
+from domains.admin.router import admin_router
 from domains.bot.router import intent_router
-
-
-def test_classify_intent_admin():
-    """Prueba que los mensajes con prefijo vayan a admin."""
-    mock_message = Mock()
-    mock_message.content = "h.setup"
-    intent = intent_router.classify_intent(mock_message)
-    assert intent == "admin"
-
-
-def test_classify_intent_osu():
-    """Prueba que palabras clave de osu! deriven a ese dominio."""
-    mock_message = Mock()
-    mock_message.content = "¿cuánto tiempo para llegar a rank 1 en osu?"
-    intent = intent_router.classify_intent(mock_message)
-    assert intent == "osu"
-
-
-def test_classify_intent_monitoring():
-    """Prueba que palabras clave de métricas deriven a monitoreo."""
-    mock_message = Mock()
-    mock_message.content = "¿cuántos tokens he consumido?"
-    intent = intent_router.classify_intent(mock_message)
-    assert intent == "monitoring"
+from domains.monitoring.router import monitoring_router
+from domains.osu.router import osu_router
 
 
 def test_classify_intent_conversation():
-    """Prueba que mensajes genéricos vayan a conversación."""
+    """Prueba que los mensajes por defecto vayan a conversación (Fase 6)."""
     mock_message = Mock()
     mock_message.content = "hola helith, ¿cómo estás?"
     intent = intent_router.classify_intent(mock_message)
     assert intent == "conversation"
+
+
+@pytest.mark.asyncio
+@patch("domains.admin.router.admin_service")
+async def test_admin_slash_help(mock_admin_service):
+    """Prueba que el slash command de ayuda envíe el panel interactivo."""
+    mock_interaction = AsyncMock()
+    await admin_router.handle_slash_help(mock_interaction)
+    mock_interaction.response.send_message.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch("domains.monitoring.router.monitoring_service")
+async def test_monitoring_slash_metrics(mock_monitoring_service):
+    """Prueba que el slash command de métricas responda de forma oculta (ephemeral)."""
+    mock_monitoring_service.get_full_report.return_value = {
+        "server_usage_analysis": {"server1": {"status": "NORMAL"}}
+    }
+    mock_interaction = AsyncMock()
+    await monitoring_router.handle_slash_metrics(mock_interaction, "server1", "user1")
+
+    mock_interaction.response.send_message.assert_called_once()
+    kwargs = mock_interaction.response.send_message.call_args.kwargs
+    assert kwargs.get("ephemeral") is True
+
+
+@pytest.mark.asyncio
+@patch("domains.osu.router.osu_service")
+async def test_osu_slash_predict(mock_osu_service):
+    """Prueba que el slash command de osu responda usando defer()."""
+    mock_osu_service.process_slash_predict = AsyncMock(
+        return_value="Predicción simulada."
+    )
+    mock_interaction = AsyncMock()
+
+    await osu_router.handle_slash_predict(
+        mock_interaction, "test_user", 5000, "server1", "user1"
+    )
+
+    # Debe avisar a Discord con un defer() para evitar timeouts
+    mock_interaction.response.defer.assert_called_once()
+    # Luego debe enviar la respuesta en el followup
+    mock_interaction.followup.send.assert_called_once_with("Predicción simulada.")

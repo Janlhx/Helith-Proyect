@@ -29,9 +29,7 @@ def calculate_expected_playtime(pp: float) -> float:
     return max(0.0, expected)
 
 
-def calculate_improvement_indicator(
-    pp: float, play_time_seconds: int
-) -> float:
+def calculate_improvement_indicator(pp: float, play_time_seconds: int) -> float:
     """Calcula el Improvement Indicator (ii) comparando el tiempo jugado esperado
     vs real.
 

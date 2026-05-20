@@ -2,51 +2,77 @@ import logging
 
 import discord
 
-from core.config import settings
-
 logger = logging.getLogger("helith.router")
 
 
 class IntentRouter:
-    """Clasifica los mensajes entrantes para decidir qué dominio debe manejarlos.
-
-    Según HELITH_DOCS, no usamos un LLM para esto para ahorrar tokens.
-    En esta fase inicial usamos reglas deterministas.
-    """
+    """Clasifica los mensajes entrantes para decidir qué dominio debe manejarlos."""
 
     def classify_intent(self, message: discord.Message) -> str:
         """Clasifica el contenido del mensaje en una intención."""
-        content = message.content.strip().lower()
-
-        # 1. Comandos administrativos (Empiezan con el prefijo, ej: h.setup)
-        if content.startswith(settings.PREFIX):
-            return "admin"
-
-        # 2. Intención: Predicción de osu!
-        # Buscamos palabras clave para derivar al dominio de osu
-        if "osu" in content and (
-            "predict" in content
-            or "rank" in content
-            or "tiempo" in content
-            or "llegar" in content
-        ):
-            logger.info(f"Intención detectada: osu! para el mensaje: '{content}'")
-            return "osu"
-
-        # 3. Intención: Monitoreo/Métricas
-        if (
-            "métricas" in content
-            or "tokens" in content
-            or "consumo" in content
-        ):
-            logger.info(
-                f"Intención detectada: monitoreo para el mensaje: '{content}'"
-            )
-            return "monitoring"
-
-        # 4. Por defecto: Conversación
-        # Si el bot fue mencionado o es un mensaje directo, asumimos conversación
+        # En la Fase 6, los dominios osu y monitoreo se movieron a Slash Commands.
+        # Solo sobrevive la conversación natural.
         return "conversation"
+
+    def needs_web_search(self, content: str) -> bool:
+        """Determina de forma heurística si una consulta requiere búsqueda web."""
+        text = content.lower().strip()
+
+        # Prefijos de búsqueda explícitos para forzar trigger
+        explicit_triggers = ["busca ", "buscar ", "search ", "google "]
+        if any(text.startswith(trigger) for trigger in explicit_triggers):
+            return True
+
+        # Palabras clave heurísticas en español e inglés
+        keywords = [
+            "noticias",
+            "news",
+            "clima",
+            "weather",
+            "precio",
+            "dólar",
+            "dolar",
+            "euro",
+            "bitcoin",
+            "crypto",
+            "partido",
+            "futbol",
+            "fútbol",
+            "resultado",
+            "ganador",
+            "campeón",
+            "campeon",
+            "hoy",
+            "today",
+            "actual",
+            "actualidad",
+            "reciente",
+            "recientes",
+            "último",
+            "ultimo",
+            "este año",
+            "this year",
+            "quien gano",
+            "quién ganó",
+            "quien es el actual",
+            "quién es el actual",
+            "qué pasó con",
+            "que paso con",
+            "quien es hoy",
+            "quién es hoy",
+            "está pasando",
+            "esta pasando",
+        ]
+
+        import re
+
+        for keyword in keywords:
+            # Búsqueda por palabra completa para evitar falsos positivos
+            pattern = rf"\b{re.escape(keyword)}\b"
+            if re.search(pattern, text):
+                return True
+
+        return False
 
 
 intent_router = IntentRouter()

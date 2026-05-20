@@ -13,6 +13,7 @@ except ImportError:
     print("   Ejecuta: pip install requests")
     sys.exit(1)
 
+
 # ── Configuración ─────────────────────────────────────────────────────────────
 # Carga el token desde .env si existe, si no lo pide manualmente
 def load_token() -> str:
@@ -90,15 +91,12 @@ def main():
     separador()
     print(f"  🔢 Total de tokens consumidos : {stats.get('total_tokens', 0):>10,}")
     print(
-        f"  📈 Promedio diario            : "
-        f"{stats.get('avg_tokens_per_day', 0):>10,}"
+        f"  📈 Promedio diario            : {stats.get('avg_tokens_per_day', 0):>10,}"
     )
 
     alerts = data.get("active_alerts", 0)
     alert_label = (
-        f"⚠️  {alerts} modelo(s) en alerta"
-        if alerts > 0
-        else "✅ Sin alertas activas"
+        f"⚠️  {alerts} modelo(s) en alerta" if alerts > 0 else "✅ Sin alertas activas"
     )
     print(f"\n  {alert_label}")
 
