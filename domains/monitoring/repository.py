@@ -146,5 +146,130 @@ class MonitoringRepository:
         finally:
             conn.close()
 
+    def get_server_usage_last_days(self, days: int = 7) -> list[dict]:
+        """Recupera el consumo de tokens agrupado por servidor."""
+        if self.supabase:
+            try:
+                from datetime import datetime, timedelta
+                cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+                response = (
+                    self.supabase.table("token_usage_logs")
+                    .select("server_id, total_tokens, timestamp")
+                    .gte("timestamp", cutoff)
+                    .execute()
+                )
+                return response.data or []
+            except Exception as e:
+                logger.error(f"Error en Supabase get_server_usage: {e}. Usando SQLite.")
+
+        # Fallback a SQLite
+        from core.db.connection import get_sqlite_connection
+        conn = get_sqlite_connection()
+        if not conn:
+            return []
+        try:
+            with conn:
+                from datetime import datetime, timedelta
+                cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+                cursor = conn.execute(
+                    "SELECT server_id, total_tokens, timestamp "
+                    "FROM token_usage_logs WHERE timestamp >= ?",
+                    (cutoff,),
+                )
+                return [
+                    {
+                        "server_id": r["server_id"],
+                        "total_tokens": r["total_tokens"],
+                        "timestamp": r["timestamp"],
+                    }
+                    for r in cursor.fetchall()
+                ]
+        except Exception as e:
+            logger.error(f"Error al leer server usage de SQLite: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def save_rate_limit_hit(self, server_id: str, user_id: str):
+        """Registra un impacto al rate limit en la base de datos."""
+        if self.supabase:
+            try:
+                self.supabase.table("rate_limit_hits").insert(
+                    {"server_id": server_id, "user_id": user_id}
+                ).execute()
+                return
+            except Exception as e:
+                logger.error(f"Error en Supabase rate limit save: {e}. Usando SQLite.")
+
+        # Fallback a SQLite
+        from core.db.connection import get_sqlite_connection
+        conn = get_sqlite_connection()
+        if not conn:
+            return
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS rate_limit_hits (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        server_id TEXT NOT NULL,
+                        user_id TEXT NOT NULL,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """
+                )
+                conn.execute(
+                    "INSERT INTO rate_limit_hits (server_id, user_id) VALUES (?, ?)",
+                    (server_id, user_id),
+                )
+        except Exception as e:
+            logger.error(f"Error al guardar rate limit en SQLite: {e}")
+        finally:
+            conn.close()
+
+    def get_rate_limit_hits_last_days(self, days: int = 7) -> list[dict]:
+        """Recupera los impactos al rate limit de los últimos N días."""
+        if self.supabase:
+            try:
+                from datetime import datetime, timedelta
+                cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+                response = (
+                    self.supabase.table("rate_limit_hits")
+                    .select("server_id, user_id, timestamp")
+                    .gte("timestamp", cutoff)
+                    .execute()
+                )
+                return response.data or []
+            except Exception as e:
+                logger.error(f"Error en Supabase get_rate_limit: {e}. Usando SQLite.")
+
+        # Fallback a SQLite
+        from core.db.connection import get_sqlite_connection
+        conn = get_sqlite_connection()
+        if not conn:
+            return []
+        try:
+            with conn:
+                from datetime import datetime, timedelta
+                cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+                cursor = conn.execute(
+                    "SELECT server_id, user_id, timestamp "
+                    "FROM rate_limit_hits WHERE timestamp >= ?",
+                    (cutoff,),
+                )
+                return [
+                    {
+                        "server_id": r["server_id"],
+                        "user_id": r["user_id"],
+                        "timestamp": r["timestamp"],
+                    }
+                    for r in cursor.fetchall()
+                ]
+        except Exception as e:
+            logger.error(f"Error al leer rate limit hits de SQLite: {e}")
+            return []
+        finally:
+            conn.close()
+
 
 monitoring_repo = MonitoringRepository()

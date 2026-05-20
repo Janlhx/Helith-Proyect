@@ -117,6 +117,84 @@ class MonitoringService:
             ),
         }
 
+    def record_rate_limit(self, server_id: str, user_id: str):
+        """Registra un impacto de rate-limit."""
+        monitoring_repo.save_rate_limit_hit(server_id, user_id)
+        logger.warning(
+            f"Rate limit alcanzado — Servidor: {server_id}, Usuario: {user_id}"
+        )
+
+    def get_server_analysis(self, days: int = 7) -> dict:
+        """Analiza el comportamiento, volumen de tokens e infracciones por servidor.
+
+        Ofrece recomendaciones de mitigación (cooldowns recomendados).
+        """
+        usage_logs = monitoring_repo.get_server_usage_last_days(days)
+        rate_logs = monitoring_repo.get_rate_limit_hits_last_days(days)
+
+        # Agrupar uso por servidor
+        servers: dict[str, dict] = {}
+        for entry in usage_logs:
+            srv = entry.get("server_id", "DM")
+            if srv not in servers:
+                servers[srv] = {
+                    "total_tokens": 0,
+                    "messages": 0,
+                    "rate_limits": 0,
+                }
+            servers[srv]["total_tokens"] += entry.get("total_tokens", 0)
+            servers[srv]["messages"] += 1
+
+        # Agrupar rate limits por servidor
+        for entry in rate_logs:
+            srv = entry.get("server_id", "DM")
+            if srv not in servers:
+                servers[srv] = {
+                    "total_tokens": 0,
+                    "messages": 0,
+                    "rate_limits": 0,
+                }
+            servers[srv]["rate_limits"] += 1
+
+        # Analizar y recomendar límites dinámicos
+        analysis = {}
+        for srv, data in servers.items():
+            avg_tokens = data["total_tokens"] / days if days > 0 else 0
+            avg_msg = data["messages"] / days if days > 0 else 0
+
+            # Clasificar nivel de uso y formular sugerencias preventivas
+            if avg_tokens > 100000 or data["rate_limits"] > 15:
+                status = "CRÍTICO"
+                recommendation = (
+                    "Incrementar cooldown a 180s y limitar a 2 mensajes "
+                    "por minuto por usuario."
+                )
+            elif avg_tokens > 30000 or data["rate_limits"] > 5:
+                status = "ADVERTENCIA"
+                recommendation = (
+                    "Incrementar cooldown a 120s o limitar a 3 mensajes "
+                    "por minuto por usuario."
+                )
+            else:
+                status = "NORMAL"
+                recommendation = (
+                    "Mantener cooldown actual de 60s (5 mensajes por minuto)."
+                )
+
+            analysis[srv] = {
+
+                "server_id": srv,
+                "total_tokens": data["total_tokens"],
+                "avg_tokens_per_day": round(avg_tokens),
+                "messages_sent": data["messages"],
+                "avg_messages_per_day": round(avg_msg, 1),
+                "rate_limit_hits": data["rate_limits"],
+                "status": status,
+                "recommended_cooldown": recommendation
+            }
+
+        return analysis
+
     def get_full_report(self) -> dict:
         """Genera el reporte completo para el dashboard."""
         stats = self.get_daily_stats(days=7)
@@ -125,6 +203,7 @@ class MonitoringService:
             predictions[model] = self.predict_exhaustion(model)
 
         alerts = [p for p in predictions.values() if p["alert"]]
+        server_reports = self.get_server_analysis(days=7)
 
         return {
             "generated_at": datetime.utcnow().isoformat(),
@@ -132,6 +211,7 @@ class MonitoringService:
             "predictions": predictions,
             "active_alerts": len(alerts),
             "alert_models": [a["model"] for a in alerts],
+            "server_usage_analysis": server_reports,
         }
 
 
