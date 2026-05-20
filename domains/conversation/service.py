@@ -94,17 +94,21 @@ class ConversationService:
         if search_triggered:
             if search_context:
                 system_prompt += (
-                    f"\n\nINFORMACIÓN EN TIEMPO REAL (Tavily — ya buscaste en internet):\n"
+                    "\n\nINFORMACIÓN EN TIEMPO REAL "
+                    "(Tavily — ya buscaste en internet):\n"
                     f"{search_context}\n"
-                    f"OBLIGATORIO: responde usando estos datos. "
-                    f"No digas que no tienes acceso a información actual ni que no puedes buscar. "
-                    f"Sé breve (máximo 3 líneas)."
+                    "OBLIGATORIO: responde usando estos datos. "
+                    "No digas que no tienes acceso a información actual "
+                    "ni que no puedes buscar. "
+                    "Sé breve (máximo 3 líneas)."
                 )
             else:
                 system_prompt += (
-                    "\n\nBÚSQUEDA WEB: el usuario pidió datos actuales pero la búsqueda "
-                    "no devolvió resultados (API no configurada o error). "
-                    "Dilo en una frase honesta; no inventes fechas, álbumes ni canciones."
+                    "\n\nBÚSQUEDA WEB: el usuario pidió datos actuales "
+                    "pero la búsqueda no devolvió resultados "
+                    "(API no configurada o error). "
+                    "Dilo en una frase honesta; "
+                    "no inventes fechas, álbumes ni canciones."
                 )
 
         logger.info(
