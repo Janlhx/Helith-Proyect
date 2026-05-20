@@ -10,9 +10,14 @@ logger = logging.getLogger("helith.tools.search")
 class TavilySearchClient:
     """Cliente para realizar búsquedas en la web usando la API de Tavily."""
 
-    def __init__(self):
-        self.api_key = getattr(settings, "TAVILY_API_KEY", "")
-        self.enabled = bool(self.api_key) and self.api_key != "your_tavily_key"
+    @property
+    def api_key(self) -> str:
+        return getattr(settings, "TAVILY_API_KEY", "")
+
+    @property
+    def enabled(self) -> bool:
+        key = self.api_key
+        return bool(key) and key != "your_tavily_key"
 
     async def search(self, query: str, max_results: int = 3) -> str:
         """Busca en Tavily y retorna un resumen conciso de 2-3 puntos clave.

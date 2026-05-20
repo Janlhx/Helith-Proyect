@@ -23,11 +23,23 @@ app = Flask(__name__)
 
 @app.route("/health")
 def health():
+    tavily_key = getattr(settings, "TAVILY_API_KEY", "")
+    tavily_status = (
+        "configured"
+        if (tavily_key and tavily_key != "your_tavily_key")
+        else "missing"
+    )
+    tavily_preview = tavily_key[:8] + "..." if tavily_key else "None"
+
     return jsonify(
         {
             "status": "ok",
             "bot": bot.is_ready() if bot else False,
             "version": settings.VERSION,
+            "tavily": {
+                "status": tavily_status,
+                "preview": tavily_preview,
+            },
         }
     )
 
@@ -159,13 +171,28 @@ async def on_message(message):
             return
         try:
             parts = content.split()
-            is_global = len(parts) > 1 and parts[1].lower() == "global"
+            cmd_type = parts[1].lower() if len(parts) > 1 else ""
 
-            if is_global:
+            if cmd_type == "global":
                 synced = await bot.tree.sync()
                 await message.reply(
                     f"Sincronizados {len(synced)} comandos slash globalmente."
                 )
+            elif cmd_type == "clear":
+                if message.guild:
+                    bot.tree.clear_commands(guild=message.guild)
+                    await bot.tree.sync(guild=message.guild)
+                    await message.reply(
+                        f"Limpiados y des-sincronizados todos los comandos "
+                        f"locales para este servidor ({message.guild.name}). "
+                        f"Ahora solo se mostrarán los comandos globales "
+                        f"(pueden tardar hasta 2 horas en aparecer)."
+                    )
+                else:
+                    await message.reply(
+                        "Este comando debe ser usado dentro de un servidor "
+                        "para limpiar comandos locales."
+                    )
             else:
                 if message.guild:
                     bot.tree.copy_global_to(guild=message.guild)
