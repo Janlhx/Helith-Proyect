@@ -95,6 +95,13 @@ async def slash_help(interaction: discord.Interaction):
 @bot.tree.command(name="metrics", description="Displays server consumption metrics.")
 @app_commands.default_permissions(administrator=True)
 async def slash_metrics(interaction: discord.Interaction):
+    # Solo el dueño del bot puede ver las métricas globales de infraestructura
+    if not await bot.is_owner(interaction.user):
+        await interaction.response.send_message(
+            "No tienes permisos para ver las métricas de red.", ephemeral=True
+        )
+        return
+
     from domains.monitoring.router import monitoring_router
 
     server_id_str = str(interaction.guild_id) if interaction.guild_id else "DM"

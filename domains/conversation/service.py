@@ -76,40 +76,43 @@ class ConversationService:
         # 5. Recuperar historial de conversación reciente (últimos 10 mensajes)
         history = conversation_repo.get_history(channel_id, limit=10)
 
-        # Formatear el historial como un diálogo
+        # Construir system prompt dinámico (ahora solo estático + regla general)
+        system_prompt = HELITH_PERSONALITY
+        if memory_context or search_context:
+            system_prompt += (
+                "\n\nINSTRUCCIÓN CRÍTICA DE CONTEXTO:\n"
+                "A continuación, en tu historial de chat se te proporcionarán datos "
+                "contextuales (Búsqueda web o Memorias pasadas). Úsalos como "
+                "TU PROPIO CONOCIMIENTO. NUNCA digas que no tienes acceso a "
+                "internet o que no estás segura. Responde con total confianza."
+            )
+
+        # Formatear el historial como un diálogo y añadir los contextos al inicio
         full_prompt = ""
+        
+        if search_triggered:
+            if search_context:
+                full_prompt += (
+                    "[DATOS DE BÚSQUEDA WEB PARA LA PREGUNTA ACTUAL]\n"
+                    f"{search_context}\n\n"
+                )
+            else:
+                full_prompt += (
+                    "[NOTA INTERNA]\n"
+                    "El usuario pidió datos actuales pero no se encontraron "
+                    "resultados. Sé honesta y dilo brevemente.\n\n"
+                )
+                
+        if memory_context:
+            full_prompt += (
+                "[MEMORIAS RECUPERADAS DEL SERVIDOR]\n"
+                f"{memory_context}\n\n"
+            )
+
+        full_prompt += "--- HISTORIAL DE CHAT ---\n"
         for msg in history:
             role_label = "Tú (Helith):" if msg["role"] == "assistant" else "Usuario:"
             full_prompt += f"{role_label} {msg['content']}\n"
-
-        # Construir system prompt dinámico con los contextos adicionales
-        system_prompt = HELITH_PERSONALITY
-        if memory_context:
-            system_prompt += (
-                f"\n\nCONTEXTO DE MEMORIA SEMÁNTICA (Pasado en este servidor):\n"
-                f"{memory_context}\n"
-                f"Usa esto como memoria si te preguntan sobre interacciones pasadas. "
-                f"Sigue siendo concisa."
-            )
-        if search_triggered:
-            if search_context:
-                system_prompt += (
-                    "\n\n[CONTEXTO DE ACTUALIDAD]\n"
-                    f"{search_context}\n"
-                    "INSTRUCCIÓN CRÍTICA PARA ESTE MENSAJE:\n"
-                    "Asume la información de arriba como conocimiento propio y actual. "
-                    "PROHIBIDO decir 'no tengo acceso a internet', "
-                    "'no tengo información en tiempo real' o dudar. "
-                    "Responde con seguridad (estilo Helith, 1-3 líneas)."
-                )
-            else:
-                system_prompt += (
-                    "\n\nBÚSQUEDA WEB: el usuario pidió datos actuales "
-                    "pero la búsqueda no devolvió resultados "
-                    "(API no configurada o error). "
-                    "Dilo en una frase honesta; "
-                    "no inventes fechas, álbumes ni canciones."
-                )
 
         logger.info(
             f"Generando respuesta para canal {channel_id} con "

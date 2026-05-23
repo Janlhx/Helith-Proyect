@@ -159,6 +159,21 @@ core/
 
 ---
 
+### 4.6 Arquitectura de Prompts y Optimización (RAG)
+
+Para evitar que el modelo sufra "Disonancia Cognitiva" (ignorar los datos en tiempo real para mantener su personalidad base), la arquitectura de prompts está dividida estrictamente:
+
+- **System Prompt:** EXCLUSIVAMENTE para la personalidad estática de Helith (`core/llm/prompts.py`).
+- **User Prompt (Contexto Situacional):** Los datos recuperados (Búsqueda Web y Memorias Semánticas) se inyectan dinámicamente como encabezados en el historial de conversación, forzando al LLM a asimilarlos como realidad actual sin romper su personaje.
+
+**Estrategia de Escalamiento y Optimización de Tokens:**
+- La ventana de chat se limita a los últimos 10 mensajes (Sliding Window).
+- Solo se envían las 3 memorias más relevantes.
+- Costo promedio por mensaje: ~1,600 tokens (incluyendo personalidad e historial).
+- Dado el *Rate Limit Global* de Discord (50 peticiones/5s) y el cooldown local de Helith (60s), el cuello de botella es Discord, no la IA. Esta configuración actual asegura máxima estabilidad y podría soportar más de 100 servidores activos por instancia sin modificaciones profundas.
+
+---
+
 ## 5. Requisitos No Funcionales
 
 | ID     | Requisito                  | Descripción                                                                                                  |
