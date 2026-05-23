@@ -12,6 +12,7 @@ dependencies = [
     "google-generativeai>=0.3.0",
     "anthropic>=0.18.0",
     "groq>=0.4.0",
+    "openai>=2.38.0",
 ]
 
 [tool.uv]

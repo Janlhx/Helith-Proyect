@@ -14,12 +14,17 @@ class LLMPool:
             bool(settings.GEMINI_API_KEY)
             and settings.GEMINI_API_KEY != "your_gemini_key"
         )
+        self.nvidia_enabled = (
+            bool(settings.NVIDIA_API_KEY)
+            and settings.NVIDIA_API_KEY != "your_nvidia_nim_key"
+        )
         self.groq_enabled = (
             bool(settings.GROQ_API_KEY) and settings.GROQ_API_KEY != "your_groq_key"
         )
 
         logger.info(
-            f"Pool inicializado: Gemini={self.gemini_enabled}, Groq={self.groq_enabled}"
+            f"Pool inicializado: Gemini={self.gemini_enabled}, "
+            f"NVIDIA={self.nvidia_enabled}, Groq={self.groq_enabled}"
         )
 
     async def generate_response(
@@ -47,7 +52,41 @@ class LLMPool:
                     f"Fallo en Gemini: {e}. Intentando con el siguiente disponible..."
                 )
 
-        # 2. Nivel Secundario: Pool de Groq
+        # 2. Nivel Secundario: NVIDIA NIM
+        if self.nvidia_enabled:
+            # Modelos actualizados — catálogo real de build.nvidia.com (Mayo 2026)
+            # Orden: velocidad + calidad primero, ligero como último recurso
+            nvidia_models = [
+                # MoE 284B/13B activos, 1M ctx — más rápido y capaz
+                "deepseek-ai/deepseek-v4-flash",
+                # MoE nativo NVIDIA, hiperoptimizado para NIM
+                "nvidia/nemotron-3-super-120b-a12b",
+                # Ligero y rápido — último recurso
+                "google/gemma-4-31b-it",
+            ]
+            for model_name in nvidia_models:
+                try:
+                    logger.info(
+                        f"Intentando generar respuesta con NVIDIA NIM ({model_name})..."
+                    )
+                    text, prompt_t, completion_t = await self._call_nvidia(
+                        prompt, system_prompt, model_name
+                    )
+                    self._record(
+                        f"nvidia/{model_name}",
+                        server_id,
+                        user_id,
+                        prompt_t,
+                        completion_t,
+                    )
+                    return text
+                except Exception as e:
+                    logger.error(
+                        f"Fallo en NVIDIA NIM con {model_name}: "
+                        f"{e}. Pasando al siguiente..."
+                    )
+
+        # 3. Nivel Terciario: Pool de Groq
         if self.groq_enabled:
             # Lista de modelos a intentar en orden
             groq_models = [
@@ -107,6 +146,31 @@ class LLMPool:
         prompt_tokens = getattr(usage, "prompt_token_count", 0) or 0
         completion_tokens = getattr(usage, "candidates_token_count", 0) or 0
         return str(response.text), prompt_tokens, completion_tokens
+
+    async def _call_nvidia(
+        self, prompt: str, system_prompt: str, model_name: str
+    ) -> tuple[str, int, int]:
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(
+            api_key=settings.NVIDIA_API_KEY,
+            base_url="https://integrate.api.nvidia.com/v1",
+        )
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        response = await client.chat.completions.create(
+            model=model_name,
+            messages=messages,  # type: ignore[arg-type]
+            max_tokens=1024,
+        )
+        text = response.choices[0].message.content or ""
+        usage = response.usage
+        prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
+        completion_tokens = getattr(usage, "completion_tokens", 0) or 0
+        return text, prompt_tokens, completion_tokens
 
     async def _call_groq(
         self, prompt: str, system_prompt: str, model_name: str
