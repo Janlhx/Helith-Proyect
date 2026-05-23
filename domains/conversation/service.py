@@ -94,13 +94,13 @@ class ConversationService:
         if search_triggered:
             if search_context:
                 system_prompt += (
-                    "\n\nINFORMACIÓN EN TIEMPO REAL "
-                    "(Tavily — ya buscaste en internet):\n"
+                    "\n\n[CONTEXTO DE ACTUALIDAD]\n"
                     f"{search_context}\n"
-                    "OBLIGATORIO: responde usando estos datos. "
-                    "No digas que no tienes acceso a información actual "
-                    "ni que no puedes buscar. "
-                    "Sé breve (máximo 3 líneas)."
+                    "INSTRUCCIÓN CRÍTICA PARA ESTE MENSAJE:\n"
+                    "Asume la información de arriba como conocimiento propio y actual. "
+                    "PROHIBIDO decir 'no tengo acceso a internet', "
+                    "'no tengo información en tiempo real' o dudar. "
+                    "Responde con seguridad (estilo Helith, 1-3 líneas)."
                 )
             else:
                 system_prompt += (

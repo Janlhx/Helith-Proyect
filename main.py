@@ -211,6 +211,32 @@ async def on_message(message):
             await message.reply(f"Error sincronizando comandos: {e}")
         return
 
+    # Comando oculto para diagnosticar Tavily
+    if content.startswith("h.tavily"):
+        if not await bot.is_owner(message.author):
+            return
+        
+        query = content[len("h.tavily"):].strip()
+        if not query:
+            await message.reply("Escribe algo para buscar. Ej: `h.tavily clima bogotá`")
+            return
+            
+        await message.reply(f"🔍 Buscando directamente en Tavily: `{query}`...")
+        from core.tools.search import tavily_search
+        try:
+            res = await tavily_search.search(query)
+            if not res:
+                await message.reply(
+                    "❌ Tavily devolvió un resultado vacío.\n"
+                    "Causas posibles: API Key inválida, límite "
+                    "excedido, o error 500."
+                )
+            else:
+                await message.reply(f"✅ Resultado exitoso:\n{res}")
+        except Exception as e:
+            await message.reply(f"⚠️ Excepción: {e}")
+        return
+
     from domains.bot.router import intent_router
 
     intent = intent_router.classify_intent(message)
