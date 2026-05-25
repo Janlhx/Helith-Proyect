@@ -6,7 +6,7 @@ import threading
 import discord
 from discord import app_commands
 from discord.ext import commands
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 from core.config import settings
 
@@ -19,6 +19,7 @@ logger = logging.getLogger("helith")
 
 # ── Flask keep-alive (para Render + UptimeRobot) ──────────────────────────────
 app = Flask(__name__)
+app.secret_key = settings.DASHBOARD_PASSWORD or "helith_fallback_secret"
 
 
 @app.route("/health")
@@ -49,16 +50,38 @@ def index():
     return jsonify({"name": "Helith", "status": "running"})
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    import secrets
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        if (
+            password
+            and settings.DASHBOARD_PASSWORD
+            and secrets.compare_digest(password, settings.DASHBOARD_PASSWORD)
+        ):
+            session["authenticated"] = True
+            return redirect(url_for("dashboard"))
+        return render_template("login.html", error="Contraseña incorrecta")
+    return render_template("login.html")
+
+
 @app.route("/dashboard")
 def dashboard():
+    if not session.get("authenticated"):
+        return redirect(url_for("login"))
+    return render_template("dashboard.html")
+
+
+@app.route("/api/metrics")
+def api_metrics():
     import secrets
-
-    from flask import request
-
-    # Protección básica: solo el admin con el token correcto puede ver el dashboard
-    auth = request.headers.get("Authorization", "")
+    # Permite acceso vía sesión (navegador) o Authorization header (scripts)
+    auth_header = request.headers.get("Authorization", "")
     expected = f"Bearer {settings.DISCORD_TOKEN[:20]}"
-    if not secrets.compare_digest(auth, expected):
+    if not session.get("authenticated") and not secrets.compare_digest(
+        auth_header, expected
+    ):
         return jsonify({"error": "Unauthorized"}), 401
 
     from domains.monitoring.service import monitoring_service
@@ -90,25 +113,6 @@ async def slash_help(interaction: discord.Interaction):
     from domains.admin.router import admin_router
 
     await admin_router.handle_slash_help(interaction)
-
-
-@bot.tree.command(name="metrics", description="Displays server consumption metrics.")
-@app_commands.default_permissions(administrator=True)
-async def slash_metrics(interaction: discord.Interaction):
-    # Solo el dueño del bot puede ver las métricas globales de infraestructura
-    if not await bot.is_owner(interaction.user):
-        await interaction.response.send_message(
-            "No tienes permisos para ver las métricas de red.", ephemeral=True
-        )
-        return
-
-    from domains.monitoring.router import monitoring_router
-
-    server_id_str = str(interaction.guild_id) if interaction.guild_id else "DM"
-    user_id_str = str(interaction.user.id)
-    await monitoring_router.handle_slash_metrics(
-        interaction, server_id_str, user_id_str
-    )
 
 
 @bot.tree.command(
@@ -242,6 +246,16 @@ async def on_message(message):
                 await message.reply(f"✅ Resultado exitoso:\n{res}")
         except Exception as e:
             await message.reply(f"⚠️ Excepción: {e}")
+        return
+
+    # Comando oculto para métricas
+    if content.startswith("h.metrics"):
+        if not await bot.is_owner(message.author):
+            return
+            
+        from domains.monitoring.router import monitoring_router
+        server_id_str = str(message.guild.id) if message.guild else "DM"
+        await monitoring_router.handle_text_metrics(message, server_id_str)
         return
 
     from domains.bot.router import intent_router

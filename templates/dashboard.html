@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helith - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f7f9fc;
+            --surface-color: #ffffff;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --accent-color: #a3bffa;
+            --border-color: #e2e8f0;
+            --success-color: #9ae6b4;
+            --success-text: #22543d;
+            --warning-color: #faf089;
+            --warning-text: #744210;
+            --danger-color: #feb2b2;
+            --danger-text: #742a2a;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-weight: 600;
+            margin: 0;
+            font-size: 2.2rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-weight: 300;
+            margin-top: 0.5rem;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--surface-color);
+            color: var(--text-primary);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 0;
+            line-height: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            margin-top: 1rem;
+        }
+
+        th {
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge.normal {
+            background-color: var(--success-color);
+            color: var(--success-text);
+        }
+
+        .badge.advertencia {
+            background-color: var(--warning-color);
+            color: var(--warning-text);
+        }
+
+        .badge.crítico {
+            background-color: var(--danger-color);
+            color: var(--danger-text);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-secondary);
+        }
+
+        #dashboard-content {
+            display: none;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .code-block {
+            background-color: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div>
+                <h1>Helith Telemetry</h1>
+                <div class="subtitle">Monitoreo de red y tokens en tiempo real</div>
+            </div>
+            <a href="/" class="logout-btn">Volver al inicio</a>
+        </header>
+
+        <div id="loading" class="loading">
+            Cargando datos de la red...
+        </div>
+
+        <div id="dashboard-content">
+            <div class="grid">
+                <div class="card">
+                    <h2>Tokens Totales (7 Días)</h2>
+                    <p class="stat-value" id="total-tokens">0</p>
+                </div>
+                <div class="card">
+                    <h2>Mensajes Procesados</h2>
+                    <p class="stat-value" id="total-messages">0</p>
+                </div>
+                <div class="card">
+                    <h2>Agotamiento Previsto</h2>
+                    <p class="stat-value" id="exhaustion-days" style="font-size: 1.8rem;">Calculando...</p>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <h2>Distribución de Uso por Servidor</h2>
+                <div class="chart-container">
+                    <canvas id="serverChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Análisis por Servidor y Recomendaciones</h2>
+                <div style="overflow-x: auto;">
+                    <table id="servers-table">
+                        <thead>
+                            <tr>
+                                <th>Servidor ID</th>
+                                <th>Estado</th>
+                                <th>Tokens</th>
+                                <th>Mensajes</th>
+                                <th>Límites Evitados</th>
+                                <th>Recomendación (Cooldown)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Llenado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchMetrics() {
+            try {
+                const response = await fetch('/api/metrics');
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const data = await response.json();
+                renderDashboard(data);
+            } catch (error) {
+                console.error("Error fetching metrics:", error);
+                document.getElementById('loading').innerText = "Error al cargar los datos.";
+            }
+        }
+
+        function renderDashboard(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
+
+            // Stats generales
+            const dailyStats = data.daily_stats || {};
+            document.getElementById('total-tokens').innerText = (dailyStats.total_tokens || 0).toLocaleString();
+            document.getElementById('total-messages').innerText = (dailyStats.messages || 0).toLocaleString();
+
+            // Predicciones
+            const predictions = data.predictions || {};
+            let geminiPred = predictions['gemini-2.5-flash'];
+            if (geminiPred && geminiPred.days_until_exhaustion) {
+                const days = geminiPred.days_until_exhaustion;
+                const text = days > 900 ? "> 1 año" : `${Math.round(days)} días`;
+                document.getElementById('exhaustion-days').innerText = text;
+            } else {
+                document.getElementById('exhaustion-days').innerText = "Sin datos suficientes";
+            }
+
+            // Tabla de Servidores
+            const servers = data.server_usage_analysis || {};
+            const tbody = document.querySelector('#servers-table tbody');
+            tbody.innerHTML = '';
+            
+            const labels = [];
+            const tokensData = [];
+            const backgroundColors = [];
+
+            for (const [id, srv] of Object.entries(servers)) {
+                // Llenar tabla
+                const tr = document.createElement('tr');
+                
+                const statusClass = srv.status ? srv.status.toLowerCase() : 'normal';
+                
+                tr.innerHTML = `
+                    <td style="font-family: monospace;">${id}</td>
+                    <td><span class="badge ${statusClass}">${srv.status || 'NORMAL'}</span></td>
+                    <td>${(srv.total_tokens || 0).toLocaleString()}</td>
+                    <td>${(srv.messages_sent || 0).toLocaleString()}</td>
+                    <td>${srv.rate_limit_hits || 0}</td>
+                    <td style="color: var(--text-secondary); font-size: 0.9rem;">${srv.recommended_cooldown || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+
+                // Datos para gráfica
+                labels.push(`Server ${id.substring(0,6)}...`);
+                tokensData.push(srv.total_tokens || 0);
+                
+                // Color según estado
+                if (statusClass === 'normal') backgroundColors.push('rgba(163, 191, 250, 0.8)');
+                else if (statusClass === 'advertencia') backgroundColors.push('rgba(250, 240, 137, 0.8)');
+                else backgroundColors.push('rgba(254, 178, 178, 0.8)');
+            }
+
+            if (Object.keys(servers).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#718096;">No hay datos de servidores registrados.</td></tr>';
+            } else {
+                // Render Chart
+                const ctx = document.getElementById('serverChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Tokens Consumidos (7 Días)',
+                            data: tokensData,
+                            backgroundColor: backgroundColors,
+                            borderRadius: 8,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(226, 232, 240, 0.5)' },
+                                border: { display: false }
+                            },
+                            x: {
+                                grid: { display: false },
+                                border: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize
+        fetchMetrics();
+    </script>
+</body>
+</html>
