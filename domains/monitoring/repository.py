@@ -24,7 +24,8 @@ class MonitoringRepository:
         conn = get_sqlite_connection()
         if not conn:
             logger.warning(
-                "No se pudo establecer conexión local SQLite para inicializar tablas de fallback."
+                "No se pudo establecer conexión SQLite "
+                "para inicializar fallback."
             )
             return
 
