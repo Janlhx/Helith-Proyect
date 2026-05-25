@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     PREFIX: str = "h."
     DISCORD_TOKEN: str = ""
+    DASHBOARD_PASSWORD: str = ""
 
     # Base de datos
     SUPABASE_URL: str = ""

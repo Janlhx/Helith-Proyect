@@ -11,23 +11,22 @@ HELITH_COLOR = 0x00F0FF
 class MonitoringRouter:
     """Enruta interacciones de monitoreo (métricas) vía Slash Commands."""
 
-    async def handle_slash_metrics(
-        self, interaction: discord.Interaction, server_id: str, user_id: str
+    async def handle_text_metrics(
+        self, message: discord.Message, server_id: str
     ):
         """Extrae el reporte del servidor y genera un Embed rico en Discord
-        de forma invisible (ephemeral).
+        para el comando oculto h.metrics.
         """
         try:
             logger.info(
-                f"MonitoringRouter procesando métricas slash para servidor {server_id}"
+                f"MonitoringRouter procesando métricas texto para servidor {server_id}"
             )
             report = monitoring_service.get_full_report()
             server_usage = report.get("server_usage_analysis", {}).get(server_id)
 
             if not server_usage:
-                await interaction.response.send_message(
-                    "Aún no hay métricas registradas para este servidor.",
-                    ephemeral=True,
+                await message.reply(
+                    "Aún no hay métricas registradas para este servidor."
                 )
                 return
 
@@ -69,13 +68,16 @@ class MonitoringRouter:
                 value=f"*{server_usage.get('recommended_cooldown', '')}*",
                 inline=False,
             )
+            embed.set_footer(
+                text="Vista rápida. Consulta el dashboard web para gráficos detallados."
+            )
 
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await message.reply(embed=embed)
 
         except Exception as e:
             logger.error(f"Error en MonitoringRouter: {e}")
-            await interaction.response.send_message(
-                "No pude extraer las métricas de red en este momento.", ephemeral=True
+            await message.reply(
+                "No pude extraer las métricas de red en este momento."
             )
 
 
