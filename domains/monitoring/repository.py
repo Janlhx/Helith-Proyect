@@ -15,6 +15,49 @@ class MonitoringRepository:
         from core.db.connection import get_supabase_client
 
         self.supabase = get_supabase_client()
+        self._init_sqlite_db()
+
+    def _init_sqlite_db(self):
+        """Inicializa las tablas de fallback en SQLite si no existen."""
+        from core.db.connection import get_sqlite_connection
+
+        conn = get_sqlite_connection()
+        if not conn:
+            logger.warning(
+                "No se pudo establecer conexión local SQLite para inicializar tablas de fallback."
+            )
+            return
+
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS token_usage_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        model_name TEXT NOT NULL,
+                        server_id TEXT NOT NULL,
+                        user_id TEXT NOT NULL,
+                        prompt_tokens INTEGER NOT NULL,
+                        completion_tokens INTEGER NOT NULL,
+                        total_tokens INTEGER NOT NULL,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """
+                )
+                conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS rate_limit_hits (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        server_id TEXT NOT NULL,
+                        user_id TEXT NOT NULL,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """
+                )
+        except Exception as e:
+            logger.error(f"Error inicializando tablas en SQLite: {e}")
+        finally:
+            conn.close()
 
     def save_log(self, log: TokenUsageLog):
         """Guarda un registro de uso de tokens."""

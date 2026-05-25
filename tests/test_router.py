@@ -27,17 +27,17 @@ async def test_admin_slash_help(mock_admin_service):
 
 @pytest.mark.asyncio
 @patch("domains.monitoring.router.monitoring_service")
-async def test_monitoring_slash_metrics(mock_monitoring_service):
-    """Prueba que el slash command de métricas responda de forma oculta (ephemeral)."""
+async def test_monitoring_text_metrics(mock_monitoring_service):
+    """Prueba que el comando de texto h.metrics responda enviando un embed."""
     mock_monitoring_service.get_full_report.return_value = {
         "server_usage_analysis": {"server1": {"status": "NORMAL"}}
     }
-    mock_interaction = AsyncMock()
-    await monitoring_router.handle_slash_metrics(mock_interaction, "server1", "user1")
+    mock_message = AsyncMock()
+    await monitoring_router.handle_text_metrics(mock_message, "server1")
 
-    mock_interaction.response.send_message.assert_called_once()
-    kwargs = mock_interaction.response.send_message.call_args.kwargs
-    assert kwargs.get("ephemeral") is True
+    mock_message.reply.assert_called_once()
+    args, kwargs = mock_message.reply.call_args
+    assert "embed" in kwargs or len(args) > 0
 
 
 @pytest.mark.asyncio
