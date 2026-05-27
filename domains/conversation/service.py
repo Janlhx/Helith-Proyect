@@ -20,21 +20,21 @@ class ConversationService:
         user_id: str,
         message_content: str,
     ) -> str:
-        """Procesa un mensaje de conversación.
+        """Process a conversation message.
 
-        1. Genera embedding de la consulta del usuario.
-        2. Recupera memorias semánticas relevantes del servidor.
-        3. Realiza una búsqueda web si la heurística del router lo indica.
-        4. Guarda el mensaje del usuario en el historial y en las memorias.
-        5. Construye el prompt con el historial y el contexto dinámico.
-        6. Llama al pool de LLMs con la personalidad de Helith.
-        7. Guarda la respuesta del bot en el historial y en las memorias.
-        8. Retorna la respuesta generada.
+        1. Generate embedding of the user's query.
+        2. Retrieve relevant semantic memories from the server.
+        3. Perform web search if the router heuristic indicates it.
+        4. Save the user message to history and memories.
+        5. Build the prompt with history and dynamic context.
+        6. Call the LLM pool with Helith's personality.
+        7. Save the bot response to history and memories.
+        8. Return the generated response.
         """
-        # 1. Generar embedding para la consulta del usuario
+        # 1. Generate embedding for the user's query
         user_embedding = await generate_embedding(message_content)
 
-        # 2. Recuperar memorias semánticas (top 3, similitud >= 0.7)
+        # 2. Retrieve semantic memories (top 3, similarity >= 0.7)
         memories = conversation_repo.search_memories(
             server_id=server_id,
             query_embedding=user_embedding,
@@ -45,25 +45,25 @@ class ConversationService:
         memory_context = ""
         if memories:
             memory_context = "\n".join(
-                f"- Pasado: {mem['content']}" for mem in memories
+                f"- Past: {mem['content']}" for mem in memories
             )
             logger.info(
-                f"Recuperadas {len(memories)} memorias semánticas "
-                f"para el servidor {server_id}."
+                f"Retrieved {len(memories)} semantic memories "
+                f"for server {server_id}."
             )
 
-        # 3. Consultas en tiempo real (Tavily) si es necesario
+        # 3. Real-time queries (Tavily) if necessary
         search_context = ""
         search_triggered = intent_router.needs_web_search(message_content)
         if search_triggered:
             search_query = intent_router.build_search_query(message_content)
             logger.info(
-                f"Trigger Tavily activado. Query: '{search_query}' "
+                f"Tavily trigger activated. Query: '{search_query}' "
                 f"(original: '{message_content}')"
             )
             search_context = await tavily_search.search(search_query)
 
-        # 4. Guardar mensaje del usuario en historial y memorias
+        # 4. Save user message to history and memories
         conversation_repo.save_message(channel_id, user_id, "user", message_content)
         conversation_repo.save_memory(
             server_id=server_id,
@@ -73,10 +73,10 @@ class ConversationService:
             embedding=user_embedding,
         )
 
-        # 5. Recuperar historial de conversación reciente (últimos 10 mensajes)
+        # 5. Retrieve recent conversation history (last 10 messages)
         history = conversation_repo.get_history(channel_id, limit=10)
 
-        # Construir system prompt dinámico (ahora solo estático + regla general)
+        # Build dynamic system prompt (now only static + general rule)
         system_prompt = HELITH_PERSONALITY
         if memory_context or search_context:
             system_prompt += (

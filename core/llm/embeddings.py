@@ -8,29 +8,29 @@ logger = logging.getLogger("helith.llm.embeddings")
 
 
 async def generate_embedding(text: str) -> list[float]:
-    """Genera un vector de embedding (768 dimensiones) para el texto usando Gemini.
+    """Generate an embedding vector (768 dimensions) for the text using Gemini.
 
-    Si no se encuentra configurada la llave o la petición falla, se retorna un
-    vector dummy de 768 dimensiones para garantizar la resiliencia técnica de Helith.
+    If the API key is not configured or the request fails, returns a dummy vector
+    of 768 dimensions to ensure Helith's technical resilience.
     """
     if not settings.GEMINI_API_KEY or settings.GEMINI_API_KEY == "your_gemini_key":
         logger.warning(
-            "API key de Gemini no configurada o es la por defecto. "
-            "Retornando vector dummy de 768 dimensiones."
+            "Gemini API key not configured or is the default. "
+            "Returning dummy vector of 768 dimensions."
         )
         return [0.0] * 768
 
     try:
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        # Usamos el modelo moderno recomendado de 768 dimensiones
+        # Using the modern recommended 768-dimension model
         result = await genai.embed_content_async(
             model="models/gemini-embedding-2",
             content=text,
             task_type="retrieval_query",
             output_dimensionality=768,
         )
-        # El resultado suele retornar una lista flotante
+        # Result typically returns a floating point list
         return result["embedding"]
     except Exception as e:
-        logger.error(f"Error al generar embedding con Gemini: {e}")
+        logger.error(f"Error generating embedding with Gemini: {e}")
         return [0.0] * 768

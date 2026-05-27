@@ -8,7 +8,7 @@ logger = logging.getLogger("helith.osu.router")
 
 
 class OsuRouter:
-    """Enruta las consultas del dominio de osu! vía Slash Commands."""
+    """Route osu! domain queries via Slash Commands."""
 
     async def handle_slash_predict(
         self,
@@ -18,14 +18,14 @@ class OsuRouter:
         server_id: str,
         user_id: str,
     ):
-        """Enruta y maneja la consulta predictiva de osu!."""
+        """Route and handle the osu! predictive query."""
         try:
             logger.info(
-                f"OsuRouter procesando /predict para username={username}, "
+                f"OsuRouter processing /predict for username={username}, "
                 f"target={target_rank}"
             )
 
-            # Avisamos a Discord que estamos procesando la respuesta
+            # Notify Discord that we are processing the response
             await interaction.response.defer()
 
             response = await osu_service.process_slash_predict(
@@ -35,7 +35,7 @@ class OsuRouter:
             await interaction.followup.send(response)
 
         except Exception as e:
-            logger.error(f"Error en OsuRouter: {e}")
+            logger.error(f"Error in OsuRouter: {e}")
             error_msg = (
                 "Sorry, an error occurred while processing your osu! "
                 "rank estimation."

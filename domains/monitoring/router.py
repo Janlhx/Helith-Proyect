@@ -14,12 +14,12 @@ class MonitoringRouter:
     async def handle_text_metrics(
         self, message: discord.Message, server_id: str
     ):
-        """Extrae el reporte del servidor y genera un Embed rico en Discord
-        para el comando oculto h.metrics.
+        """Extract the server report and generate a rich Discord Embed
+        for the hidden h.metrics command.
         """
         try:
             logger.info(
-                f"MonitoringRouter procesando métricas texto para servidor {server_id}"
+                f"MonitoringRouter processing text metrics for server {server_id}"
             )
             report = monitoring_service.get_full_report()
             server_usage = report.get("server_usage_analysis", {}).get(server_id)

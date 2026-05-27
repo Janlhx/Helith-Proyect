@@ -8,12 +8,12 @@ logger = logging.getLogger("helith.router")
 
 
 class IntentRouter:
-    """Clasifica los mensajes entrantes para decidir qué dominio debe manejarlos."""
+    """Classifies incoming messages to determine which domain should handle them."""
 
     def classify_intent(self, message: discord.Message) -> str:
-        """Clasifica el contenido del mensaje en una intención."""
-        # En la Fase 6, los dominios osu y monitoreo se movieron a Slash Commands.
-        # Solo sobrevive la conversación natural.
+        """Classify the message content into an intent."""
+        # In Phase 6, the osu and monitoring domains moved to Slash Commands.
+        # Only natural conversation remains.
         return "conversation"
 
     def needs_web_search(self, content: str) -> bool:
@@ -21,7 +21,7 @@ class IntentRouter:
         return needs_web_search(content)
 
     def build_search_query(self, content: str) -> str:
-        """Normaliza el mensaje del usuario para enviarlo a Tavily."""
+        """Normalize the user message for sending to Tavily."""
         return build_search_query(content)
 
 

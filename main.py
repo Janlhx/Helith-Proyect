@@ -259,7 +259,8 @@ async def on_message(message):
         
         query = content[len("h.tavily"):].strip()
         if not query:
-            await message.reply("Write something to search. Ex: `h.tavily weather london`")
+            msg = "Write something to search. Ex: `h.tavily weather london`"
+            await message.reply(msg)
             return
             
         await message.reply(f"🔍 Searching directly on Tavily: `{query}`...")

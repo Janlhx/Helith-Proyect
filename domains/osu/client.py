@@ -31,17 +31,17 @@ class OsuApiClient:
 
     @property
     def is_mock_enabled(self) -> bool:
-        """Determina si debemos operar en modo simulado."""
+        """Determine if we should operate in mock mode."""
         return settings.OSU_MOCK_MODE or not self.client_id or not self.client_secret
 
     async def _get_access_token(self, session: aiohttp.ClientSession) -> str:
-        """Obtiene o refresca el token de acceso OAuth2."""
+        """Get or refresh the OAuth2 access token."""
         now = time.time()
-        # Si el token es válido y le quedan al menos 60 segundos de vida, lo reusamos
+        # If the token is valid and has at least 60 seconds of life remaining, reuse it
         if self._access_token and self._token_expires_at > now + 60:
             return self._access_token
 
-        logger.info("Obteniendo nuevo token de acceso OAuth2 para osu! API...")
+        logger.info("Obtaining new OAuth2 access token for osu! API...")
         payload = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
@@ -53,9 +53,9 @@ class OsuApiClient:
             if response.status != 200:
                 text = await response.text()
                 logger.error(
-                    f"Error al obtener token de osu! (HTTP {response.status}): {text}"
+                    f"Error obtaining osu! token (HTTP {response.status}): {text}"
                 )
-                raise Exception("No se pudo autenticar con la API de osu!.")
+                raise Exception("Could not authenticate with osu! API.")
 
             data = await response.json()
             self._access_token = data["access_token"]
@@ -65,13 +65,13 @@ class OsuApiClient:
             return self._access_token
 
     async def get_user_data(self, username: str) -> Optional[Dict[str, Any]]:
-        """Recupera la información del perfil del jugador y su historial de rangos.
+        """Retrieve player profile information and rank history.
 
-        Devuelve un diccionario unificado o None si ocurre un error.
+        Returns a unified dictionary or None if an error occurs.
         """
         if self.is_mock_enabled:
             logger.warning(
-                f"Modo MOCK activo. Simulando datos para el usuario: '{username}'"
+                f"MOCK mode active. Simulating data for user: '{username}'"
             )
             return self._generate_mock_user_data(username)
 
@@ -89,19 +89,19 @@ class OsuApiClient:
 
                 async with session.get(url, headers=headers, params=params) as response:
                     if response.status == 404:
-                        logger.warning(f"Usuario de osu! no encontrado: '{username}'")
+                        logger.warning(f"osu! user not found: '{username}'")
                         return None
                     elif response.status != 200:
                         text = await response.text()
                         logger.error(
-                            f"Error al consultar usuario (HTTP {response.status}): "
+                            f"Error querying user (HTTP {response.status}): "
                             f"{text}"
                         )
                         return None
 
                     data = await response.json()
 
-                    # Extraer campos clave garantizando que la estructura sea limpia
+                    # Extract key fields ensuring clean structure
                     user_id = data.get("id")
                     actual_name = data.get("username", username)
                     stats = data.get("statistics", {})
@@ -109,14 +109,13 @@ class OsuApiClient:
                     pp = stats.get("pp", 0.0)
                     play_time = stats.get("play_time", 0)
 
-                    # rank_history suele venir como:
-                    # {"data": [rank_dia_1, rank_dia_2, ...]}
+                    # rank_history usually comes as:
+                    # {"data": [rank_day_1, rank_day_2, ...]}
                     history_data = data.get("rank_history", {}).get("data", [])
 
                     if global_rank is None:
                         logger.warning(
-                            f"El usuario '{actual_name}' no tiene rango global "
-                            f"asignado (inactivo)."
+                            f"User '{actual_name}' has no global rank assigned (inactive)."
                         )
                         return None
 
@@ -130,15 +129,13 @@ class OsuApiClient:
                     }
 
         except Exception as e:
-            logger.exception(f"Excepción al consultar osu! API para '{username}': {e}")
+            logger.exception(f"Exception querying osu! API for '{username}': {e}")
             return None
 
     def _generate_mock_user_data(self, username: str) -> Dict[str, Any]:
-        """Genera un perfil simulado de osu! de forma determinista usando el
-        hash del nombre.
+        """Generate a simulated osu! profile deterministically using the hash of the name.
 
-        Esto garantiza que consultar por 'Litxe' siempre dé el mismo resultado mock
-        en pruebas.
+        This ensures that querying 'Litxe' always gives the same mock result in tests.
         """
         # Crear un seed determinista basado en el nombre de usuario
         hash_val = int(hashlib.md5(username.lower().encode("utf-8")).hexdigest(), 16)

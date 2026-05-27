@@ -67,7 +67,8 @@ class LLMPool:
             for model_name in nvidia_models:
                 try:
                     logger.info(
-                        f"Attempting to generate response with NVIDIA NIM ({model_name})..."
+                        f"Attempting to generate response with NVIDIA NIM "
+                        f"({model_name})..."
                     )
                     text, prompt_t, completion_t = await self._call_nvidia(
                         prompt, system_prompt, model_name

@@ -135,8 +135,8 @@ class AdminService:
             embed = discord.Embed(
                 title="💬 Smart Conversation",
                 description=(
-                    "I am capable of holding natural conversations, adapting "
-                    "to the language you speak to me, and searching the web in real-time."
+                    "I am capable of holding natural conversations, adapting to the "
+                    "language you speak to me, and searching the web in real-time."
                 ),
                 color=HELITH_COLOR,
             )
@@ -152,7 +152,8 @@ class AdminService:
             embed.add_field(
                 name="Capabilities",
                 value=(
-                    "• **Multi-LLM Fallback:** I stay online even if a provider fails.\n"
+                    "• **Multi-LLM Fallback:** I stay online even if a provider "
+                    "fails.\n"
                     "• **Real-Time Search:** I can look up current news and facts.\n"
                     "• **Semantic Memory:** I remember important context."
                 ),
