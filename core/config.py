@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     )
 
     # Bot
-    VERSION: str = "0.1.0"
+    VERSION: str = "1.0.0"
     PREFIX: str = "h."
     DISCORD_TOKEN: str = ""
     DASHBOARD_PASSWORD: str = ""

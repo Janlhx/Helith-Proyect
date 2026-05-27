@@ -136,11 +136,42 @@ async def slash_predict(
 
 @bot.event
 async def on_ready():
-    logger.info(f"Helith online — {bot.user} ({bot.user.id})")
+    # ── Generar Boot Report (RF-15) ──────────────────────────────────────────
+    db_status = "🟢 Supabase" if settings.SUPABASE_KEY else "⚠️ SQLite (Fallback)"
+    tavily_status = "🟢 Active" if settings.TAVILY_API_KEY else "⚪ Inactive"
+    
+    # Modelos LLM
+    llms_active = []
+    if settings.GEMINI_API_KEY:
+        llms_active.append("Gemini")
+    if settings.NVIDIA_API_KEY:
+        llms_active.append("NVIDIA NIM")
+    if settings.GROQ_API_KEY:
+        llms_active.append("Groq")
+    llms_str = ", ".join(llms_active) if llms_active else "None (CRITICAL)"
+
+    # osu! API
+    osu_status = "🟢 Active" if settings.OSU_CLIENT_ID else "⚪ Mock Mode"
+
+    report = (
+        f"\n{'='*50}\n"
+        f"🤖 HELITH ONLINE — v{settings.VERSION}\n"
+        f"👤 {bot.user} (ID: {bot.user.id})\n"
+        f"🌍 Environment: {settings.ENVIRONMENT.upper()}\n"
+        f"{'-'*50}\n"
+        f"🗄️ Database: {db_status}\n"
+        f"🧠 Active LLMs: {llms_str}\n"
+        f"🔍 Web Search: {tavily_status}\n"
+        f"🎮 osu! Integration: {osu_status}\n"
+        f"🌐 Web Dashboard: 🟢 Port 8080\n"
+        f"{'='*50}"
+    )
+    logger.info(report)
+
     await bot.change_presence(
         activity=discord.Activity(
             type=discord.ActivityType.watching,
-            name="por la ventana",
+            name="out the window | v" + settings.VERSION,
         )
     )
 
@@ -187,39 +218,38 @@ async def on_message(message):
             if cmd_type == "global":
                 synced = await bot.tree.sync()
                 await message.reply(
-                    f"Sincronizados {len(synced)} comandos slash globalmente."
+                    f"Synced {len(synced)} slash commands globally."
                 )
             elif cmd_type == "clear":
                 if message.guild:
                     bot.tree.clear_commands(guild=message.guild)
                     await bot.tree.sync(guild=message.guild)
                     await message.reply(
-                        f"Limpiados y des-sincronizados todos los comandos "
-                        f"locales para este servidor ({message.guild.name}). "
-                        f"Ahora solo se mostrarán los comandos globales "
-                        f"(pueden tardar hasta 2 horas en aparecer)."
+                        f"Cleared and desynced all local commands for "
+                        f"this server ({message.guild.name}). "
+                        f"Only global commands will be shown now "
+                        f"(may take up to 2 hours to appear)."
                     )
                 else:
                     await message.reply(
-                        "Este comando debe ser usado dentro de un servidor "
-                        "para limpiar comandos locales."
+                        "This command must be used inside a server "
+                        "to clear local commands."
                     )
             else:
                 if message.guild:
                     bot.tree.copy_global_to(guild=message.guild)
                     synced = await bot.tree.sync(guild=message.guild)
                     await message.reply(
-                        f"Sincronizados {len(synced)} comandos slash de "
-                        f"manera instantánea para este servidor "
-                        f"({message.guild.name})."
+                        f"Instantly synced {len(synced)} slash commands "
+                        f"for this server ({message.guild.name})."
                     )
                 else:
                     await message.reply(
-                        "Este comando debe ser usado dentro de un servidor "
-                        "para sincronizar localmente, o usa `h.sync global`."
+                        "This command must be used inside a server "
+                        "to sync locally, or use `h.sync global`."
                     )
         except Exception as e:
-            await message.reply(f"Error sincronizando comandos: {e}")
+            await message.reply(f"Error syncing commands: {e}")
         return
 
     # Comando oculto para diagnosticar Tavily
@@ -229,23 +259,23 @@ async def on_message(message):
         
         query = content[len("h.tavily"):].strip()
         if not query:
-            await message.reply("Escribe algo para buscar. Ej: `h.tavily clima bogotá`")
+            await message.reply("Write something to search. Ex: `h.tavily weather london`")
             return
             
-        await message.reply(f"🔍 Buscando directamente en Tavily: `{query}`...")
+        await message.reply(f"🔍 Searching directly on Tavily: `{query}`...")
         from core.tools.search import tavily_search
         try:
             res = await tavily_search.search(query)
             if not res:
                 await message.reply(
-                    "❌ Tavily devolvió un resultado vacío.\n"
-                    "Causas posibles: API Key inválida, límite "
-                    "excedido, o error 500."
+                    "❌ Tavily returned an empty result.\n"
+                    "Possible causes: Invalid API Key, rate limit "
+                    "exceeded, or 500 error."
                 )
             else:
-                await message.reply(f"✅ Resultado exitoso:\n{res}")
+                await message.reply(f"✅ Successful result:\n{res}")
         except Exception as e:
-            await message.reply(f"⚠️ Excepción: {e}")
+            await message.reply(f"⚠️ Exception: {e}")
         return
 
     # Comando oculto para métricas
@@ -279,8 +309,8 @@ async def on_message(message):
             str(message.guild.id) if message.guild else "DM", str(message.author.id)
         )
         await message.reply(
-            f"Oye, relájate un poco. Estás hablando demasiado rápido. "
-            f"Inténtalo de nuevo en {retry_user:.1f} segundos."
+            f"Hey, chill a bit. You're talking too fast. "
+            f"Try again in {retry_user:.1f} seconds."
         )
         return
 
@@ -295,15 +325,15 @@ async def on_message(message):
                 str(message.guild.id), str(message.author.id)
             )
             await message.reply(
-                f"Este servidor está muy ruidoso. Me están saturando. "
-                f"Inténtalo de nuevo en {retry_guild:.1f} segundos."
+                f"This server is too noisy. I'm getting saturated. "
+                f"Try again in {retry_guild:.1f} seconds."
             )
             return
 
     # Limpiar la mención del texto de manera robusta
     content = re.sub(rf"<@!?{bot.user.id}>", "", message.content).strip()
     if not content:
-        content = "hola"  # Si solo nos mencionaron, saludamos
+        content = "hello"  # Si solo nos mencionaron, saludamos
 
     # Derivar según la intención clasificada
     response = None
@@ -333,7 +363,7 @@ if __name__ == "__main__":
     # Flask en un thread separado
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
-    logger.info("Keep-alive server iniciado")
+    logger.info("Keep-alive server started")
 
     # Bot en el thread principal
     bot.run(settings.DISCORD_TOKEN)

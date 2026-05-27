@@ -8,17 +8,17 @@ logger = logging.getLogger("helith.db")
 
 
 def get_supabase_client():
-    """Inicializa y retorna el cliente de Supabase si existen credenciales."""
+    """Initializes and returns the Supabase client if credentials exist."""
     # Importación diferida para no exigir la librería si solo se usa SQLite
     try:
         from supabase import Client, create_client
     except ImportError:
-        logger.warning("Librería 'supabase' no instalada. Operando en modo fallback.")
+        logger.warning("Library 'supabase' not installed. Operating in fallback mode.")
         return None
 
     if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
         logger.warning(
-            "Credenciales de Supabase incompletas. Operando en modo fallback."
+            "Incomplete Supabase credentials. Operating in fallback mode."
         )
         return None
 
@@ -26,12 +26,12 @@ def get_supabase_client():
         client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
         return client
     except Exception as e:
-        logger.error(f"Error al conectar a Supabase: {e}")
+        logger.error(f"Error connecting to Supabase: {e}")
         return None
 
 
 def get_sqlite_connection():
-    """Retorna una conexión a la base de datos SQLite local."""
+    """Returns a connection to the local SQLite database."""
     db_path = os.environ.get("SQLITE_DB_PATH", "helith_fallback.db")
     try:
         # Aumentamos timeout a 30s para evitar problemas de bloqueo multi-hilo
@@ -42,5 +42,5 @@ def get_sqlite_connection():
         conn.execute("PRAGMA foreign_keys = ON;")
         return conn
     except Exception as e:
-        logger.critical(f"Error al conectar a SQLite: {e}")
+        logger.critical(f"Error connecting to SQLite: {e}")
         return None

@@ -26,7 +26,7 @@ class MonitoringRouter:
 
             if not server_usage:
                 await message.reply(
-                    "Aún no hay métricas registradas para este servidor."
+                    "No metrics registered for this server yet."
                 )
                 return
 
@@ -39,37 +39,37 @@ class MonitoringRouter:
                 status_emoji = "🔴"
 
             embed = discord.Embed(
-                title=f"📊 Análisis de Red | Servidor: `{server_id}`",
+                title=f"📊 Network Analysis | Server: `{server_id}`",
                 color=HELITH_COLOR,
             )
             embed.add_field(
-                name="Estado de Salud",
+                name="Health Status",
                 value=f"{status_emoji} **{status}**",
                 inline=False,
             )
             embed.add_field(
-                name="Tráfico (7 Días)",
+                name="Traffic (7 Days)",
                 value=(
-                    f"Mensajes: `{server_usage.get('messages_sent', 0)}`\n"
+                    f"Messages: `{server_usage.get('messages_sent', 0)}`\n"
                     f"Tokens: `{server_usage.get('total_tokens', 0):,}`\n"
-                    f"Promedio/Día: `{server_usage.get('avg_tokens_per_day', 0):,}`"
+                    f"Avg/Day: `{server_usage.get('avg_tokens_per_day', 0):,}`"
                 ),
                 inline=False,
             )
             embed.add_field(
-                name="Protección Rate Limit",
+                name="Rate Limit Protection",
                 value=(
-                    f"Impactos Bloqueados: `{server_usage.get('rate_limit_hits', 0)}`"
+                    f"Blocked Hits: `{server_usage.get('rate_limit_hits', 0)}`"
                 ),
                 inline=False,
             )
             embed.add_field(
-                name="Recomendación Dinámica",
+                name="Dynamic Recommendation",
                 value=f"*{server_usage.get('recommended_cooldown', '')}*",
                 inline=False,
             )
             embed.set_footer(
-                text="Vista rápida. Consulta el dashboard web para gráficos detallados."
+                text="Quick view. Check the web dashboard for detailed charts."
             )
 
             await message.reply(embed=embed)
@@ -77,7 +77,7 @@ class MonitoringRouter:
         except Exception as e:
             logger.error(f"Error en MonitoringRouter: {e}")
             await message.reply(
-                "No pude extraer las métricas de red en este momento."
+                "I couldn't extract network metrics at this time."
             )
 
 

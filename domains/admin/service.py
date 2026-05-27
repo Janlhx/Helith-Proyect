@@ -57,13 +57,11 @@ class AdminService:
     def get_help_embed(self, section: str = "home") -> discord.Embed:
         if section == "home":
             embed = discord.Embed(
-                title="HELITH // USER MANUAL v0.1.0",
+                title="HELITH // USER MANUAL v1.0.0",
                 description=(
                     "I am an analytical artificial intelligence designed for "
                     "game progress predictive modeling and network metrics "
-                    "diagnostics.\n\n"
-                    "**Status:** ACTIVE\n"
-                    "**Primary Interface:** Slash Commands (`/`)"
+                    "diagnostics."
                 ),
                 color=HELITH_COLOR,
             )
@@ -108,26 +106,26 @@ class AdminService:
 
         elif section == "monitoring":
             embed = discord.Embed(
-                title="📊 Monitoring & Metrics",
+                title="📊 Monitoring & Telemetry",
                 description=(
-                    "I keep a constant log of network usage, Rate Limit hits "
-                    "(Cooldowns), and LLM token consumption."
+                    "I keep a constant log of network usage, rate limits, "
+                    "and multi-LLM token consumption across all providers."
                 ),
                 color=HELITH_COLOR,
             )
             embed.add_field(
-                name="Integrated Commands",
+                name="Web Dashboard",
                 value=(
-                    "This command is restricted to Server Administrators:\n\n`/metrics`"
+                    "I expose a private web dashboard for administrators "
+                    "to monitor real-time consumption and quota exhaustion."
                 ),
                 inline=False,
             )
             embed.add_field(
-                name="Health States",
+                name="Commands",
                 value=(
-                    "🟢 NORMAL\n"
-                    "🟡 WARNING (Suggested cooldown: 120s)\n"
-                    "🔴 CRITICAL (Suggested cooldown: 180s)"
+                    "Hidden command `h.metrics` provides a quick summary "
+                    "directly in chat (Admin only)."
                 ),
                 inline=False,
             )
@@ -137,8 +135,8 @@ class AdminService:
             embed = discord.Embed(
                 title="💬 Smart Conversation",
                 description=(
-                    "I am capable of holding natural conversations and adapting "
-                    "to the language you speak to me."
+                    "I am capable of holding natural conversations, adapting "
+                    "to the language you speak to me, and searching the web in real-time."
                 ),
                 color=HELITH_COLOR,
             )
@@ -152,10 +150,11 @@ class AdminService:
                 inline=False,
             )
             embed.add_field(
-                name="Limits",
+                name="Capabilities",
                 value=(
-                    "I operate under a strict limit of **5 messages per minute** "
-                    "per user, and **20 messages per minute** per server."
+                    "• **Multi-LLM Fallback:** I stay online even if a provider fails.\n"
+                    "• **Real-Time Search:** I can look up current news and facts.\n"
+                    "• **Semantic Memory:** I remember important context."
                 ),
                 inline=False,
             )

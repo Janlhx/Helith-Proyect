@@ -379,18 +379,18 @@
     <header>
         <div class="brand">
             <h1>Helith Telemetry</h1>
-            <p>Monitoreo de red, tokens y modelos en tiempo real</p>
+            <p>Real-time network, tokens, and model monitoring</p>
         </div>
         <div class="header-actions">
             <button class="btn btn-primary" id="refresh-btn" onclick="refreshData()">
-                <span id="refresh-icon">↻</span> Actualizar
+                <span id="refresh-icon">↻</span> Refresh
             </button>
-            <a href="/" class="btn btn-ghost">Volver al inicio</a>
+            <a href="/" class="btn btn-ghost">Back to home</a>
         </div>
     </header>
 
     <!-- Status bar -->
-    <div id="status-bar">Última actualización: <span id="last-updated">—</span></div>
+    <div id="status-bar">Last updated: <span id="last-updated">—</span></div>
 
     <!-- Alerts banner -->
     <div id="alerts-banner" role="alert"></div>
@@ -398,47 +398,47 @@
     <!-- Loading -->
     <div id="loading">
         <div class="spinner"></div>
-        Cargando datos de telemetría...
+        Loading telemetry data...
     </div>
 
     <!-- Content -->
     <div id="dashboard-content">
 
         <!-- KPIs 7 días -->
-        <div class="section-label">Últimos 7 días</div>
+        <div class="section-label">Last 7 Days</div>
         <div class="grid-4">
             <div class="card">
-                <p class="card-title">Tokens consumidos</p>
+                <p class="card-title">Tokens consumed</p>
                 <p class="stat-val" id="kpi-tokens">—</p>
                 <p class="stat-sub" id="kpi-tokens-avg"></p>
             </div>
             <div class="card">
-                <p class="card-title">Mensajes procesados</p>
+                <p class="card-title">Messages processed</p>
                 <p class="stat-val" id="kpi-messages">—</p>
             </div>
             <div class="card">
-                <p class="card-title">Tokens este mes (30d)</p>
+                <p class="card-title">Tokens this month (30d)</p>
                 <p class="stat-val" id="kpi-monthly-tokens">—</p>
                 <p class="stat-sub" id="kpi-monthly-avg"></p>
             </div>
             <div class="card">
-                <p class="card-title">Modelos activos</p>
+                <p class="card-title">Active models</p>
                 <p class="stat-val" id="kpi-models">—</p>
-                <p class="stat-sub">en los últimos 7 días</p>
+                <p class="stat-sub">in the last 7 days</p>
             </div>
         </div>
 
         <!-- Charts row -->
-        <div class="section-label">Análisis de consumo</div>
+        <div class="section-label">Consumption Analysis</div>
         <div class="grid-2">
             <div class="card">
-                <p class="card-title">Tokens por día (7d)</p>
+                <p class="card-title">Tokens per day (7d)</p>
                 <div class="chart-wrap">
                     <canvas id="daily-chart"></canvas>
                 </div>
             </div>
             <div class="card">
-                <p class="card-title">Distribución por servidor</p>
+                <p class="card-title">Distribution by server</p>
                 <div class="chart-wrap">
                     <canvas id="server-chart"></canvas>
                 </div>
@@ -449,33 +449,33 @@
         <div class="grid-2" style="margin-top:1.2rem;">
 
             <div class="card">
-                <p class="card-title">Uso por modelo (7d)</p>
+                <p class="card-title">Usage by model (7d)</p>
                 <div class="model-list" id="model-list"></div>
             </div>
 
             <div class="card">
-                <p class="card-title">Vida útil estimada por modelo</p>
+                <p class="card-title">Estimated lifespan by model</p>
                 <div class="pred-list" id="pred-list"></div>
                 <p class="stat-sub" style="margin-top:.8rem;">
-                    Basado en promedio de consumo diario de los últimos 7 días.
+                    Based on the daily average consumption of the last 7 days.
                 </p>
             </div>
         </div>
 
         <!-- Servers table -->
-        <div class="section-label">Análisis por servidor</div>
+        <div class="section-label">Server Analysis</div>
         <div class="card">
             <div style="overflow-x:auto;">
                 <table id="servers-table">
                     <thead>
                         <tr>
-                            <th>Servidor ID</th>
-                            <th>Estado</th>
+                            <th>Server ID</th>
+                            <th>Status</th>
                             <th>Tokens</th>
-                            <th>Tokens/día</th>
-                            <th>Mensajes</th>
+                            <th>Tokens/day</th>
+                            <th>Messages</th>
                             <th>Rate Limits</th>
-                            <th>Recomendación</th>
+                            <th>Recommendation</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -483,7 +483,7 @@
             </div>
         </div>
 
-        <div class="generated-at">Generado el <span id="generated-at">—</span></div>
+        <div class="generated-at">Generated at <span id="generated-at">—</span></div>
 
     </div><!-- /dashboard-content -->
 </div><!-- /wrap -->
@@ -564,13 +564,13 @@
 
         document.getElementById('kpi-tokens').textContent = fmt(ds.total_tokens);
         document.getElementById('kpi-tokens-avg').textContent =
-            `~${fmt(ds.avg_tokens_per_day)} por día`;
+            `~${fmt(ds.avg_tokens_per_day)} per day`;
         document.getElementById('kpi-messages').textContent =
             fmtFull(ds.messages);
         document.getElementById('kpi-monthly-tokens').textContent =
             fmt(ms.total_tokens);
         document.getElementById('kpi-monthly-avg').textContent =
-            `~${fmt(ms.avg_tokens_per_day)} por día`;
+            `~${fmt(ms.avg_tokens_per_day)} per day`;
         document.getElementById('kpi-models').textContent =
             activeModels.length || '—';
 
@@ -579,7 +579,7 @@
         if (data.active_alerts > 0) {
             alertBanner.style.display = 'block';
             alertBanner.innerHTML =
-                `⚠️ <strong>${data.active_alerts} modelo(s) en alerta:</strong> ` +
+                `⚠️ <strong>${data.active_alerts} model(s) on alert:</strong> ` +
                 data.alert_models.map(modelShortName).join(', ');
         } else {
             alertBanner.style.display = 'none';
@@ -677,7 +677,7 @@
 
         if (Object.keys(byModel).length === 0) {
             modelList.innerHTML =
-                '<p style="color:var(--text-3);font-size:.85rem;">Sin datos aún.</p>';
+                '<p style="color:var(--text-3);font-size:.85rem;">No data yet.</p>';
         } else {
             Object.entries(byModel)
                 .sort((a, b) => b[1] - a[1])
@@ -701,7 +701,7 @@
 
         if (Object.keys(preds).length === 0) {
             predList.innerHTML =
-                '<p style="color:var(--text-3);font-size:.85rem;">Sin datos suficientes para predicción.</p>';
+                '<p style="color:var(--text-3);font-size:.85rem;">Not enough data for prediction.</p>';
         } else {
             Object.entries(preds)
                 .sort((a, b) => (a[1].pct_used || 0) - (b[1].pct_used || 0))
@@ -713,13 +713,13 @@
                             ? '#fde68a'
                             : '#86efac';
                     const daysText = p.days_until_exhaustion
-                        ? `${p.days_until_exhaustion} días`
-                        : '> 1 año';
+                        ? `${p.days_until_exhaustion} days`
+                        : '> 1 year';
                     predList.innerHTML += `
                         <div class="pred-item">
                             <div class="pred-header">
                                 <span class="pred-model">${modelShortName(name)}</span>
-                                <span class="pred-days">${daysText} restantes · ${pct}%</span>
+                                <span class="pred-days">${daysText} remaining · ${pct}%</span>
                             </div>
                             <div class="pred-pct-bar">
                                 <div class="pred-pct-fill"
@@ -736,7 +736,7 @@
         if (srvEntries.length === 0) {
             tbody.innerHTML =
                 '<tr><td colspan="7" style="text-align:center;color:var(--text-3);">' +
-                'No hay datos de servidores registrados.</td></tr>';
+                'No server data registered yet.</td></tr>';
         } else {
             srvEntries.forEach(([id, srv]) => {
                 const st = (srv.status || 'NORMAL').toLowerCase();
@@ -761,7 +761,7 @@
             if (data) renderDashboard(data);
         } catch(e) {
             document.getElementById('loading').innerHTML =
-                '<p style="color:var(--crit-text);">Error al cargar datos. Intenta de nuevo.</p>';
+                '<p style="color:var(--crit-text);">Error loading data. Try again.</p>';
         }
     })();
 </script>

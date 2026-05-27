@@ -37,8 +37,8 @@ class OsuRouter:
         except Exception as e:
             logger.error(f"Error en OsuRouter: {e}")
             error_msg = (
-                "Lo siento, ha ocurrido un error al procesar tu estimación "
-                "de rango en osu!."
+                "Sorry, an error occurred while processing your osu! "
+                "rank estimation."
             )
             if interaction.response.is_done():
                 await interaction.followup.send(error_msg)

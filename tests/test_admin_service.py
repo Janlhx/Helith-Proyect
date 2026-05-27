@@ -5,7 +5,7 @@ def test_admin_help_embed_home():
     """Prueba que el embed principal sea correcto en inglés."""
     embed = admin_service.get_help_embed("home")
     assert "USER MANUAL" in embed.title
-    assert "Slash Commands" in embed.description
+    assert "diagnostics" in embed.description
     assert len(embed.fields) == 1
     assert embed.fields[0].name == "🏠 Home"
 
@@ -20,8 +20,8 @@ def test_admin_help_embed_osu():
 def test_admin_help_embed_monitoring():
     """Prueba el embed de la sección de monitoreo de red."""
     embed = admin_service.get_help_embed("monitoring")
-    assert "Monitoring & Metrics" in embed.title
-    assert "Administrator" in embed.fields[0].value
+    assert "Monitoring & Telemetry" in embed.title
+    assert "administrator" in embed.fields[0].value
 
 
 def test_admin_help_embed_chat():

@@ -6,10 +6,10 @@ logger = logging.getLogger("helith.llm")
 
 
 class LLMPool:
-    """Gestiona el pool de LLMs con lógica de fallback."""
+    """Manages the LLM pool with fallback logic."""
 
     def __init__(self):
-        # Verificamos qué llaves están disponibles
+        # Verify which API keys are available
         self.gemini_enabled = (
             bool(settings.GEMINI_API_KEY)
             and settings.GEMINI_API_KEY != "your_gemini_key"
@@ -23,7 +23,7 @@ class LLMPool:
         )
 
         logger.info(
-            f"Pool inicializado: Gemini={self.gemini_enabled}, "
+            f"Pool initialized: Gemini={self.gemini_enabled}, "
             f"NVIDIA={self.nvidia_enabled}, Groq={self.groq_enabled}"
         )
 
@@ -34,12 +34,12 @@ class LLMPool:
         server_id: str = "unknown",
         user_id: str = "unknown",
     ) -> str:
-        """Genera respuesta usando el pool de modelos con fallback."""
+        """Generates a response using the model pool with fallback."""
 
         # 1. Nivel Primario: Gemini
         if self.gemini_enabled:
             try:
-                logger.info("Intentando generar respuesta con Gemini (Primario)...")
+                logger.info("Attempting to generate response with Gemini (Primary)...")
                 text, prompt_t, completion_t = await self._call_gemini(
                     prompt, system_prompt
                 )
@@ -49,25 +49,25 @@ class LLMPool:
                 return text
             except Exception as e:
                 logger.error(
-                    f"Fallo en Gemini: {e}. Intentando con el siguiente disponible..."
+                    f"Gemini failed: {e}. Trying the next available model..."
                 )
 
         # 2. Nivel Secundario: NVIDIA NIM
         if self.nvidia_enabled:
-            # Modelos actualizados — catálogo real de build.nvidia.com (Mayo 2026)
-            # Orden: velocidad + calidad primero, ligero como último recurso
+            # Updated models — real build.nvidia.com catalog (May 2026)
+            # Order: speed + quality first, lightweight as last resort
             nvidia_models = [
-                # MoE 284B/13B activos, 1M ctx — más rápido y capaz
+                # Active MoE 284B/13B, 1M ctx — fastest and most capable
                 "deepseek-ai/deepseek-v4-flash",
-                # MoE nativo NVIDIA, hiperoptimizado para NIM
+                # Native NVIDIA MoE, hyper-optimized for NIM
                 "nvidia/nemotron-3-super-120b-a12b",
-                # Ligero y rápido — último recurso
+                # Lightweight and fast — last resort
                 "google/gemma-4-31b-it",
             ]
             for model_name in nvidia_models:
                 try:
                     logger.info(
-                        f"Intentando generar respuesta con NVIDIA NIM ({model_name})..."
+                        f"Attempting to generate response with NVIDIA NIM ({model_name})..."
                     )
                     text, prompt_t, completion_t = await self._call_nvidia(
                         prompt, system_prompt, model_name
@@ -82,13 +82,13 @@ class LLMPool:
                     return text
                 except Exception as e:
                     logger.error(
-                        f"Fallo en NVIDIA NIM con {model_name}: "
-                        f"{e}. Pasando al siguiente..."
+                        f"NVIDIA NIM failed with {model_name}: "
+                        f"{e}. Moving to the next..."
                     )
 
         # 3. Nivel Terciario: Pool de Groq
         if self.groq_enabled:
-            # Lista de modelos a intentar en orden
+            # List of models to try in order
             groq_models = [
                 "llama-3.3-70b-versatile",
                 "deepseek-r1-distill-llama-70b",
@@ -99,7 +99,7 @@ class LLMPool:
             for model_name in groq_models:
                 try:
                     logger.info(
-                        f"Intentando generar respuesta con Groq ({model_name})..."
+                        f"Attempting to generate response with Groq ({model_name})..."
                     )
                     text, prompt_t, completion_t = await self._call_groq(
                         prompt, system_prompt, model_name
@@ -108,10 +108,10 @@ class LLMPool:
                     return text
                 except Exception as e:
                     logger.error(
-                        f"Fallo en Groq con {model_name}: {e}. Pasando al siguiente..."
+                        f"Groq failed with {model_name}: {e}. Moving to the next..."
                     )
 
-        raise Exception("Todos los modelos fallaron o no están configurados.")
+        raise Exception("All models failed or are not configured.")
 
     def _record(
         self,
@@ -121,7 +121,7 @@ class LLMPool:
         prompt_tokens: int,
         completion_tokens: int,
     ):
-        """Registra el consumo de tokens en el servicio de monitoreo."""
+        """Records token consumption in the monitoring service."""
         try:
             from domains.monitoring.service import monitoring_service
 
@@ -129,7 +129,7 @@ class LLMPool:
                 model_name, server_id, user_id, prompt_tokens, completion_tokens
             )
         except Exception as e:
-            logger.warning(f"No se pudo registrar el uso de tokens: {e}")
+            logger.warning(f"Could not record token usage: {e}")
 
     async def _call_gemini(
         self, prompt: str, system_prompt: str
@@ -194,5 +194,5 @@ class LLMPool:
         return text, prompt_tokens, completion_tokens
 
 
-# Instancia única para ser usada en todo el proyecto
+# Singleton instance to be used throughout the project
 llm_pool = LLMPool()
