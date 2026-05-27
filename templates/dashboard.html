@@ -3,354 +3,767 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helith - Dashboard</title>
+    <title>Helith — Telemetry</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-color: #f7f9fc;
-            --surface-color: #ffffff;
-            --text-primary: #2d3748;
-            --text-secondary: #718096;
-            --accent-color: #a3bffa;
-            --border-color: #e2e8f0;
-            --success-color: #9ae6b4;
-            --success-text: #22543d;
-            --warning-color: #faf089;
-            --warning-text: #744210;
-            --danger-color: #feb2b2;
-            --danger-text: #742a2a;
+            --bg:       #f4f6fb;
+            --surface:  #ffffff;
+            --border:   #e8edf5;
+            --text-1:   #1e2a3a;
+            --text-2:   #6b7a90;
+            --text-3:   #a0aec0;
+            --accent:   #7c9ef5;
+            --accent-2: #b5c9ff;
+            --ok:       #86efac;
+            --ok-text:  #166534;
+            --warn:     #fde68a;
+            --warn-text:#92400e;
+            --crit:     #fca5a5;
+            --crit-text:#991b1b;
+            --radius:   18px;
+            --shadow:   0 2px 16px rgba(30,42,58,0.06);
         }
+
+        *, *::before, *::after { box-sizing: border-box; }
 
         body {
             margin: 0;
-            padding: 0;
             font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
+            background: var(--bg);
+            color: var(--text-1);
+            font-size: 15px;
+            line-height: 1.5;
         }
 
-        .container {
-            max-width: 1200px;
+        /* ── Layout ─────────────────────────────────── */
+        .wrap {
+            max-width: 1180px;
             margin: 0 auto;
-            padding: 3rem 2rem;
+            padding: 2.8rem 2rem 5rem;
         }
 
+        /* ── Header ──────────────────────────────────── */
         header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 3rem;
+            align-items: flex-start;
+            margin-bottom: 2.6rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        h1 {
-            font-weight: 600;
+        .brand h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 .25rem;
+            letter-spacing: -.03em;
+            color: var(--text-1);
+        }
+
+        .brand p {
             margin: 0;
-            font-size: 2.2rem;
-            letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
+            color: var(--text-2);
             font-weight: 300;
-            margin-top: 0.5rem;
         }
 
-        .logout-btn {
-            background-color: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .5rem 1.1rem;
+            border-radius: 10px;
             font-family: 'Outfit', sans-serif;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .logout-btn:hover {
-            background-color: var(--surface-color);
-            color: var(--text-primary);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .card {
-            background-color: var(--surface-color);
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-            border: 1px solid rgba(226, 232, 240, 0.5);
-        }
-
-        .card h2 {
-            font-size: 1.2rem;
+            font-size: .9rem;
             font-weight: 500;
-            margin-top: 0;
-            margin-bottom: 1.5rem;
-            color: var(--text-secondary);
+            cursor: pointer;
+            border: none;
+            transition: all .18s ease;
+            text-decoration: none;
         }
 
-        .stat-value {
-            font-size: 2.5rem;
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-2);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--surface);
+            color: var(--text-1);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary:hover {
+            background: #6389e8;
+        }
+
+        .btn-primary:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        /* spinning icon */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinning { animation: spin .8s linear infinite; }
+
+        /* ── Status bar ──────────────────────────────── */
+        #status-bar {
+            display: none;
+            font-size: .82rem;
+            color: var(--text-3);
+            margin-bottom: 2rem;
+            padding-left: .2rem;
+        }
+
+        /* ── Alerts banner ───────────────────────────── */
+        #alerts-banner {
+            display: none;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 12px;
+            padding: 1rem 1.4rem;
+            margin-bottom: 2rem;
+            color: #9a3412;
+            font-size: .9rem;
+            font-weight: 500;
+        }
+
+        /* ── Loading ─────────────────────────────────── */
+        #loading {
+            text-align: center;
+            padding: 5rem 2rem;
+            color: var(--text-2);
+        }
+
+        #loading .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            animation: spin .7s linear infinite;
+        }
+
+        #dashboard-content { display: none; }
+
+        /* ── Sections ────────────────────────────────── */
+        .section-label {
+            font-size: .78rem;
             font-weight: 600;
-            margin: 0;
-            line-height: 1;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin: 2.4rem 0 1rem;
         }
 
+        /* ── Grid ────────────────────────────────────── */
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2rem;
+        }
+
+        @media (max-width: 900px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .grid-4, .grid-2 { grid-template-columns: 1fr; }
+            .wrap { padding: 1.6rem 1rem 4rem; }
+        }
+
+        /* ── Card ────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.6rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: .82rem;
+            font-weight: 500;
+            color: var(--text-2);
+            margin: 0 0 .6rem;
+            letter-spacing: .01em;
+        }
+
+        .stat-val {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -.03em;
+            line-height: 1;
+            margin: 0;
+        }
+
+        .stat-sub {
+            font-size: .8rem;
+            color: var(--text-3);
+            margin-top: .4rem;
+        }
+
+        /* ── Charts ──────────────────────────────────── */
+        .chart-wrap {
+            position: relative;
+            height: 240px;
+        }
+
+        .chart-wrap-tall {
+            position: relative;
+            height: 280px;
+        }
+
+        /* ── Models table ────────────────────────────── */
+        .model-list {
+            display: flex;
+            flex-direction: column;
+            gap: .6rem;
+            margin-top: .4rem;
+        }
+
+        .model-row {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+        }
+
+        .model-name {
+            font-size: .82rem;
+            color: var(--text-1);
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .model-bar-wrap {
+            width: 100px;
+            height: 6px;
+            background: var(--bg);
+            border-radius: 99px;
+            flex-shrink: 0;
+        }
+
+        .model-bar {
+            height: 6px;
+            border-radius: 99px;
+            background: var(--accent-2);
+            transition: width .6s ease;
+        }
+
+        .model-tokens {
+            font-size: .78rem;
+            color: var(--text-2);
+            width: 70px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* ── Predictions ─────────────────────────────── */
+        .pred-list {
+            display: flex;
+            flex-direction: column;
+            gap: .8rem;
+            margin-top: .4rem;
+        }
+
+        .pred-item {
+            display: flex;
+            flex-direction: column;
+            gap: .15rem;
+        }
+
+        .pred-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .pred-model {
+            font-size: .82rem;
+            color: var(--text-1);
+            font-weight: 500;
+        }
+
+        .pred-days {
+            font-size: .8rem;
+            color: var(--text-2);
+        }
+
+        .pred-pct-bar {
+            height: 5px;
+            background: var(--bg);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .pred-pct-fill {
+            height: 5px;
+            border-radius: 99px;
+            transition: width .6s ease;
+        }
+
+        /* ── Servers table ───────────────────────────── */
         table {
             width: 100%;
             border-collapse: collapse;
-            text-align: left;
-            margin-top: 1rem;
         }
 
         th {
-            font-weight: 500;
-            color: var(--text-secondary);
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-3);
+            text-align: left;
+            padding: 0 1rem .8rem 0;
+            border-bottom: 1px solid var(--border);
         }
 
         td {
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--border-color);
+            padding: .9rem 1rem .9rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: .88rem;
         }
 
-        tr:last-child td {
-            border-bottom: none;
-        }
+        tr:last-child td { border-bottom: none; }
 
         .badge {
-            padding: 0.4rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.85rem;
-            font-weight: 500;
             display: inline-block;
+            padding: .25rem .7rem;
+            border-radius: 99px;
+            font-size: .78rem;
+            font-weight: 600;
         }
 
-        .badge.normal {
-            background-color: var(--success-color);
-            color: var(--success-text);
-        }
+        .badge.normal       { background: var(--ok);   color: var(--ok-text); }
+        .badge.advertencia  { background: var(--warn);  color: var(--warn-text); }
+        .badge.crítico      { background: var(--crit);  color: var(--crit-text); }
 
-        .badge.advertencia {
-            background-color: var(--warning-color);
-            color: var(--warning-text);
-        }
+        .mono { font-family: monospace; font-size: .82rem; color: var(--text-2); }
 
-        .badge.crítico {
-            background-color: var(--danger-color);
-            color: var(--danger-text);
-        }
-
-        .loading {
-            text-align: center;
-            padding: 4rem;
-            color: var(--text-secondary);
-        }
-
-        #dashboard-content {
-            display: none;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
-
-        .code-block {
-            background-color: #f8fafc;
-            padding: 1rem;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            overflow-x: auto;
+        /* ── Generated at ────────────────────────────── */
+        .generated-at {
+            margin-top: 2.5rem;
+            text-align: right;
+            font-size: .78rem;
+            color: var(--text-3);
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <div>
-                <h1>Helith Telemetry</h1>
-                <div class="subtitle">Monitoreo de red y tokens en tiempo real</div>
-            </div>
-            <a href="/" class="logout-btn">Volver al inicio</a>
-        </header>
+<div class="wrap">
 
-        <div id="loading" class="loading">
-            Cargando datos de la red...
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <h1>Helith Telemetry</h1>
+            <p>Monitoreo de red, tokens y modelos en tiempo real</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="refresh-btn" onclick="refreshData()">
+                <span id="refresh-icon">↻</span> Actualizar
+            </button>
+            <a href="/" class="btn btn-ghost">Volver al inicio</a>
+        </div>
+    </header>
+
+    <!-- Status bar -->
+    <div id="status-bar">Última actualización: <span id="last-updated">—</span></div>
+
+    <!-- Alerts banner -->
+    <div id="alerts-banner" role="alert"></div>
+
+    <!-- Loading -->
+    <div id="loading">
+        <div class="spinner"></div>
+        Cargando datos de telemetría...
+    </div>
+
+    <!-- Content -->
+    <div id="dashboard-content">
+
+        <!-- KPIs 7 días -->
+        <div class="section-label">Últimos 7 días</div>
+        <div class="grid-4">
+            <div class="card">
+                <p class="card-title">Tokens consumidos</p>
+                <p class="stat-val" id="kpi-tokens">—</p>
+                <p class="stat-sub" id="kpi-tokens-avg"></p>
+            </div>
+            <div class="card">
+                <p class="card-title">Mensajes procesados</p>
+                <p class="stat-val" id="kpi-messages">—</p>
+            </div>
+            <div class="card">
+                <p class="card-title">Tokens este mes (30d)</p>
+                <p class="stat-val" id="kpi-monthly-tokens">—</p>
+                <p class="stat-sub" id="kpi-monthly-avg"></p>
+            </div>
+            <div class="card">
+                <p class="card-title">Modelos activos</p>
+                <p class="stat-val" id="kpi-models">—</p>
+                <p class="stat-sub">en los últimos 7 días</p>
+            </div>
         </div>
 
-        <div id="dashboard-content">
-            <div class="grid">
-                <div class="card">
-                    <h2>Tokens Totales (7 Días)</h2>
-                    <p class="stat-value" id="total-tokens">0</p>
-                </div>
-                <div class="card">
-                    <h2>Mensajes Procesados</h2>
-                    <p class="stat-value" id="total-messages">0</p>
-                </div>
-                <div class="card">
-                    <h2>Agotamiento Previsto</h2>
-                    <p class="stat-value" id="exhaustion-days" style="font-size: 1.8rem;">Calculando...</p>
+        <!-- Charts row -->
+        <div class="section-label">Análisis de consumo</div>
+        <div class="grid-2">
+            <div class="card">
+                <p class="card-title">Tokens por día (7d)</p>
+                <div class="chart-wrap">
+                    <canvas id="daily-chart"></canvas>
                 </div>
             </div>
-
-            <div class="card" style="margin-bottom: 2rem;">
-                <h2>Distribución de Uso por Servidor</h2>
-                <div class="chart-container">
-                    <canvas id="serverChart"></canvas>
+            <div class="card">
+                <p class="card-title">Distribución por servidor</p>
+                <div class="chart-wrap">
+                    <canvas id="server-chart"></canvas>
                 </div>
+            </div>
+        </div>
+
+        <!-- Models + Predictions -->
+        <div class="grid-2" style="margin-top:1.2rem;">
+
+            <div class="card">
+                <p class="card-title">Uso por modelo (7d)</p>
+                <div class="model-list" id="model-list"></div>
             </div>
 
             <div class="card">
-                <h2>Análisis por Servidor y Recomendaciones</h2>
-                <div style="overflow-x: auto;">
-                    <table id="servers-table">
-                        <thead>
-                            <tr>
-                                <th>Servidor ID</th>
-                                <th>Estado</th>
-                                <th>Tokens</th>
-                                <th>Mensajes</th>
-                                <th>Límites Evitados</th>
-                                <th>Recomendación (Cooldown)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Llenado por JS -->
-                        </tbody>
-                    </table>
-                </div>
+                <p class="card-title">Vida útil estimada por modelo</p>
+                <div class="pred-list" id="pred-list"></div>
+                <p class="stat-sub" style="margin-top:.8rem;">
+                    Basado en promedio de consumo diario de los últimos 7 días.
+                </p>
             </div>
         </div>
-    </div>
 
-    <script>
-        async function fetchMetrics() {
-            try {
-                const response = await fetch('/api/metrics');
-                if (response.status === 401) {
-                    window.location.href = '/login';
-                    return;
-                }
-                const data = await response.json();
-                renderDashboard(data);
-            } catch (error) {
-                console.error("Error fetching metrics:", error);
-                document.getElementById('loading').innerText = "Error al cargar los datos.";
-            }
+        <!-- Servers table -->
+        <div class="section-label">Análisis por servidor</div>
+        <div class="card">
+            <div style="overflow-x:auto;">
+                <table id="servers-table">
+                    <thead>
+                        <tr>
+                            <th>Servidor ID</th>
+                            <th>Estado</th>
+                            <th>Tokens</th>
+                            <th>Tokens/día</th>
+                            <th>Mensajes</th>
+                            <th>Rate Limits</th>
+                            <th>Recomendación</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="generated-at">Generado el <span id="generated-at">—</span></div>
+
+    </div><!-- /dashboard-content -->
+</div><!-- /wrap -->
+
+<script>
+    let dailyChartInst = null;
+    let serverChartInst = null;
+
+    /* ── Helpers ───────────────────────────────────── */
+    function fmt(n) {
+        if (n === null || n === undefined) return '—';
+        if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+        if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+        return n.toLocaleString();
+    }
+
+    function fmtFull(n) {
+        return (n || 0).toLocaleString();
+    }
+
+    function hslPastel(idx, total) {
+        const hue = Math.round((idx / Math.max(total, 1)) * 300 + 180);
+        return `hsl(${hue}, 60%, 75%)`;
+    }
+
+    function modelShortName(m) {
+        // Quitar prefijos nvidia/ para display
+        return m.replace(/^nvidia\/[\w-]+\//, '').replace(/^nvidia\//, '');
+    }
+
+    /* ── Fetch & refresh ───────────────────────────── */
+    async function fetchMetrics() {
+        const res = await fetch('/api/metrics');
+        if (res.status === 401) { window.location.href = '/login'; return null; }
+        return res.json();
+    }
+
+    async function refreshData() {
+        const btn = document.getElementById('refresh-btn');
+        const icon = document.getElementById('refresh-icon');
+        btn.disabled = true;
+        icon.classList.add('spinning');
+
+        try {
+            const data = await fetchMetrics();
+            if (data) renderDashboard(data);
+        } catch(e) {
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+            icon.classList.remove('spinning');
+        }
+    }
+
+    /* ── Render ────────────────────────────────────── */
+    function renderDashboard(data) {
+        // Show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboard-content').style.display = 'block';
+        document.getElementById('status-bar').style.display = 'block';
+
+        // Last updated
+        const now = new Date();
+        document.getElementById('last-updated').textContent =
+            now.toLocaleTimeString('es-ES');
+
+        // Generated at
+        if (data.generated_at) {
+            const d = new Date(data.generated_at);
+            document.getElementById('generated-at').textContent =
+                d.toLocaleString('es-ES');
         }
 
-        function renderDashboard(data) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('dashboard-content').style.display = 'block';
+        // ── KPIs ──────────────────────────────────────
+        const ds = data.daily_stats || {};
+        const ms = data.monthly_stats || {};
+        const activeModels = data.active_models || [];
 
-            // Stats generales
-            const dailyStats = data.daily_stats || {};
-            document.getElementById('total-tokens').innerText = (dailyStats.total_tokens || 0).toLocaleString();
-            document.getElementById('total-messages').innerText = (dailyStats.messages || 0).toLocaleString();
+        document.getElementById('kpi-tokens').textContent = fmt(ds.total_tokens);
+        document.getElementById('kpi-tokens-avg').textContent =
+            `~${fmt(ds.avg_tokens_per_day)} por día`;
+        document.getElementById('kpi-messages').textContent =
+            fmtFull(ds.messages);
+        document.getElementById('kpi-monthly-tokens').textContent =
+            fmt(ms.total_tokens);
+        document.getElementById('kpi-monthly-avg').textContent =
+            `~${fmt(ms.avg_tokens_per_day)} por día`;
+        document.getElementById('kpi-models').textContent =
+            activeModels.length || '—';
 
-            // Predicciones
-            const predictions = data.predictions || {};
-            let geminiPred = predictions['gemini-2.5-flash'];
-            if (geminiPred && geminiPred.days_until_exhaustion) {
-                const days = geminiPred.days_until_exhaustion;
-                const text = days > 900 ? "> 1 año" : `${Math.round(days)} días`;
-                document.getElementById('exhaustion-days').innerText = text;
-            } else {
-                document.getElementById('exhaustion-days').innerText = "Sin datos suficientes";
-            }
+        // ── Alerts ────────────────────────────────────
+        const alertBanner = document.getElementById('alerts-banner');
+        if (data.active_alerts > 0) {
+            alertBanner.style.display = 'block';
+            alertBanner.innerHTML =
+                `⚠️ <strong>${data.active_alerts} modelo(s) en alerta:</strong> ` +
+                data.alert_models.map(modelShortName).join(', ');
+        } else {
+            alertBanner.style.display = 'none';
+        }
 
-            // Tabla de Servidores
-            const servers = data.server_usage_analysis || {};
-            const tbody = document.querySelector('#servers-table tbody');
-            tbody.innerHTML = '';
-            
-            const labels = [];
-            const tokensData = [];
-            const backgroundColors = [];
+        // ── Daily chart ───────────────────────────────
+        const breakdown = ds.daily_breakdown || {};
+        const sortedDays = Object.keys(breakdown).sort();
+        const dayValues = sortedDays.map(d => breakdown[d]);
 
-            for (const [id, srv] of Object.entries(servers)) {
-                // Llenar tabla
-                const tr = document.createElement('tr');
-                
-                const statusClass = srv.status ? srv.status.toLowerCase() : 'normal';
-                
-                tr.innerHTML = `
-                    <td style="font-family: monospace;">${id}</td>
-                    <td><span class="badge ${statusClass}">${srv.status || 'NORMAL'}</span></td>
-                    <td>${(srv.total_tokens || 0).toLocaleString()}</td>
-                    <td>${(srv.messages_sent || 0).toLocaleString()}</td>
-                    <td>${srv.rate_limit_hits || 0}</td>
-                    <td style="color: var(--text-secondary); font-size: 0.9rem;">${srv.recommended_cooldown || '-'}</td>
-                `;
-                tbody.appendChild(tr);
-
-                // Datos para gráfica
-                labels.push(`Server ${id.substring(0,6)}...`);
-                tokensData.push(srv.total_tokens || 0);
-                
-                // Color según estado
-                if (statusClass === 'normal') backgroundColors.push('rgba(163, 191, 250, 0.8)');
-                else if (statusClass === 'advertencia') backgroundColors.push('rgba(250, 240, 137, 0.8)');
-                else backgroundColors.push('rgba(254, 178, 178, 0.8)');
-            }
-
-            if (Object.keys(servers).length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#718096;">No hay datos de servidores registrados.</td></tr>';
-            } else {
-                // Render Chart
-                const ctx = document.getElementById('serverChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Tokens Consumidos (7 Días)',
-                            data: tokensData,
-                            backgroundColor: backgroundColors,
-                            borderRadius: 8,
-                            borderWidth: 0
-                        }]
+        if (dailyChartInst) dailyChartInst.destroy();
+        const ctx1 = document.getElementById('daily-chart').getContext('2d');
+        dailyChartInst = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: sortedDays.map(d => {
+                    const [, m, day] = d.split('-');
+                    return `${day}/${m}`;
+                }),
+                datasets: [{
+                    label: 'Tokens',
+                    data: dayValues,
+                    backgroundColor: 'rgba(124,158,245,0.25)',
+                    borderColor: 'rgba(124,158,245,0.9)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(232,237,245,0.8)' },
+                        border: { display: false },
+                        ticks: {
+                            font: { family: 'Outfit', size: 11 },
+                            color: '#a0aec0',
+                            callback: v => fmt(v)
+                        }
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: 'rgba(226, 232, 240, 0.5)' },
-                                border: { display: false }
-                            },
-                            x: {
-                                grid: { display: false },
-                                border: { display: false }
-                            }
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { font: { family: 'Outfit', size: 11 }, color: '#a0aec0' }
+                    }
+                }
+            }
+        });
+
+        // ── Server chart (donut) ───────────────────────
+        const servers = data.server_usage_analysis || {};
+        const srvEntries = Object.entries(servers);
+        const srvLabels = srvEntries.map(([id]) => id.length > 10 ? id.slice(0,10)+'…' : id);
+        const srvTokens = srvEntries.map(([, s]) => s.total_tokens || 0);
+        const srvColors = srvEntries.map((_, i) => hslPastel(i, srvEntries.length));
+
+        if (serverChartInst) serverChartInst.destroy();
+        const ctx2 = document.getElementById('server-chart').getContext('2d');
+        serverChartInst = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: srvLabels,
+                datasets: [{
+                    data: srvTokens,
+                    backgroundColor: srvColors,
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { family: 'Outfit', size: 11 },
+                            color: '#6b7a90',
+                            padding: 14,
+                            boxWidth: 12
                         }
                     }
-                });
+                }
             }
+        });
+
+        // ── Models list ────────────────────────────────
+        const byModel = ds.by_model || {};
+        const modelList = document.getElementById('model-list');
+        modelList.innerHTML = '';
+        const maxTok = Math.max(1, ...Object.values(byModel));
+
+        if (Object.keys(byModel).length === 0) {
+            modelList.innerHTML =
+                '<p style="color:var(--text-3);font-size:.85rem;">Sin datos aún.</p>';
+        } else {
+            Object.entries(byModel)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([name, tokens]) => {
+                    const pct = Math.max(4, Math.round((tokens / maxTok) * 100));
+                    modelList.innerHTML += `
+                        <div class="model-row">
+                            <span class="model-name" title="${name}">${modelShortName(name)}</span>
+                            <div class="model-bar-wrap">
+                                <div class="model-bar" style="width:${pct}%"></div>
+                            </div>
+                            <span class="model-tokens">${fmt(tokens)}</span>
+                        </div>`;
+                });
         }
 
-        // Initialize
-        fetchMetrics();
-    </script>
+        // ── Predictions ────────────────────────────────
+        const preds = data.active_predictions || {};
+        const predList = document.getElementById('pred-list');
+        predList.innerHTML = '';
+
+        if (Object.keys(preds).length === 0) {
+            predList.innerHTML =
+                '<p style="color:var(--text-3);font-size:.85rem;">Sin datos suficientes para predicción.</p>';
+        } else {
+            Object.entries(preds)
+                .sort((a, b) => (a[1].pct_used || 0) - (b[1].pct_used || 0))
+                .forEach(([name, p]) => {
+                    const pct = Math.min(100, p.pct_used || 0);
+                    const fillColor = pct >= 80
+                        ? '#fca5a5'
+                        : pct >= 50
+                            ? '#fde68a'
+                            : '#86efac';
+                    const daysText = p.days_until_exhaustion
+                        ? `${p.days_until_exhaustion} días`
+                        : '> 1 año';
+                    predList.innerHTML += `
+                        <div class="pred-item">
+                            <div class="pred-header">
+                                <span class="pred-model">${modelShortName(name)}</span>
+                                <span class="pred-days">${daysText} restantes · ${pct}%</span>
+                            </div>
+                            <div class="pred-pct-bar">
+                                <div class="pred-pct-fill"
+                                     style="width:${pct}%;background:${fillColor}"></div>
+                            </div>
+                        </div>`;
+                });
+        }
+
+        // ── Servers table ──────────────────────────────
+        const tbody = document.querySelector('#servers-table tbody');
+        tbody.innerHTML = '';
+
+        if (srvEntries.length === 0) {
+            tbody.innerHTML =
+                '<tr><td colspan="7" style="text-align:center;color:var(--text-3);">' +
+                'No hay datos de servidores registrados.</td></tr>';
+        } else {
+            srvEntries.forEach(([id, srv]) => {
+                const st = (srv.status || 'NORMAL').toLowerCase();
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="mono">${id}</td>
+                        <td><span class="badge ${st}">${srv.status || 'NORMAL'}</span></td>
+                        <td>${fmtFull(srv.total_tokens)}</td>
+                        <td>${fmtFull(srv.avg_tokens_per_day)}</td>
+                        <td>${fmtFull(srv.messages_sent)}</td>
+                        <td>${srv.rate_limit_hits || 0}</td>
+                        <td style="color:var(--text-2);font-size:.82rem;">${srv.recommended_cooldown || '—'}</td>
+                    </tr>`;
+            });
+        }
+    }
+
+    /* ── Init ──────────────────────────────────────── */
+    (async () => {
+        try {
+            const data = await fetchMetrics();
+            if (data) renderDashboard(data);
+        } catch(e) {
+            document.getElementById('loading').innerHTML =
+                '<p style="color:var(--crit-text);">Error al cargar datos. Intenta de nuevo.</p>';
+        }
+    })();
+</script>
 </body>
 </html>

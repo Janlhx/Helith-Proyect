@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from domains.monitoring.models import TokenUsageLog
 from domains.monitoring.repository import monitoring_repo
@@ -7,9 +7,14 @@ from domains.monitoring.repository import monitoring_repo
 logger = logging.getLogger("helith.monitoring.service")
 
 # Límites gratuitos aproximados (tokens por día)
-# Gemini Flash: ~1M tokens/día gratis, Groq: ~500K tokens/día gratis
+# Gemini Flash: ~1M tokens/día gratis
+# NVIDIA NIM: sin cuota estricta pública — 5M como referencia operativa
+# Groq: ~500K tokens/día gratis
 MODEL_DAILY_LIMITS: dict[str, int] = {
     "gemini-2.5-flash": 1_000_000,
+    "nvidia/deepseek-ai/deepseek-v4-flash": 5_000_000,
+    "nvidia/nvidia/nemotron-3-super-120b-a12b": 5_000_000,
+    "nvidia/google/gemma-4-31b-it": 5_000_000,
     "llama-3.3-70b-versatile": 500_000,
     "deepseek-r1-distill-llama-70b": 500_000,
     "llama-3.1-8b-instant": 500_000,
@@ -51,16 +56,19 @@ class MonitoringService:
 
         # Agrupar por día
         daily: dict[str, int] = {}
+        total_messages = 0
         for log in logs:
             ts = log.get("timestamp", "")
             day = ts[:10] if ts else "unknown"  # Solo la fecha YYYY-MM-DD
             daily[day] = daily.get(day, 0) + log.get("total_tokens", 0)
+            total_messages += 1
 
         total = sum(daily.values())
         avg_per_day = total / days if days > 0 else 0
 
         return {
             "total_tokens": total,
+            "messages": total_messages,
             "avg_tokens_per_day": round(avg_per_day),
             "daily_breakdown": daily,
             "by_model": monitoring_repo.get_total_by_model(days),
@@ -125,14 +133,16 @@ class MonitoringService:
         """Analiza el comportamiento, volumen de tokens e infracciones por servidor.
 
         Ofrece recomendaciones de mitigación (cooldowns recomendados).
+        Deduplica server IDs (normaliza strips de espacios en el ID).
         """
         usage_logs = monitoring_repo.get_server_usage_last_days(days)
         rate_logs = monitoring_repo.get_rate_limit_hits_last_days(days)
 
-        # Agrupar uso por servidor
+        # Agrupar uso por servidor — normalizamos el ID quitando espacios
         servers: dict[str, dict] = {}
         for entry in usage_logs:
-            srv = entry.get("server_id", "DM")
+            raw_srv = entry.get("server_id", "DM")
+            srv = str(raw_srv).strip() if raw_srv else "DM"
             if srv not in servers:
                 servers[srv] = {
                     "total_tokens": 0,
@@ -144,7 +154,8 @@ class MonitoringService:
 
         # Agrupar rate limits por servidor
         for entry in rate_logs:
-            srv = entry.get("server_id", "DM")
+            raw_srv = entry.get("server_id", "DM")
+            srv = str(raw_srv).strip() if raw_srv else "DM"
             if srv not in servers:
                 servers[srv] = {
                     "total_tokens": 0,
@@ -194,19 +205,43 @@ class MonitoringService:
     def get_full_report(self) -> dict:
         """Genera el reporte completo para el dashboard."""
         stats = self.get_daily_stats(days=7)
+        stats_30d = self.get_daily_stats(days=30)
+
         predictions = {}
         for model in MODEL_DAILY_LIMITS:
             predictions[model] = self.predict_exhaustion(model)
 
+        # Solo incluir modelos con datos reales (evitar ruido)
+        active_predictions = {
+            m: p for m, p in predictions.items() if p["avg_daily_tokens"] > 0
+        }
+
         alerts = [p for p in predictions.values() if p["alert"]]
         server_reports = self.get_server_analysis(days=7)
 
+        # Modelos activos ordenados por consumo
+        by_model = stats.get("by_model", {})
+        active_models = sorted(by_model.items(), key=lambda x: x[1], reverse=True)
+
         return {
-            "generated_at": datetime.utcnow().isoformat(),
-            "stats_7d": stats,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "daily_stats": {
+                "total_tokens": stats["total_tokens"],
+                "messages": stats["messages"],
+                "avg_tokens_per_day": stats["avg_tokens_per_day"],
+                "daily_breakdown": stats["daily_breakdown"],
+                "by_model": stats["by_model"],
+            },
+            "monthly_stats": {
+                "total_tokens": stats_30d["total_tokens"],
+                "messages": stats_30d["messages"],
+                "avg_tokens_per_day": stats_30d["avg_tokens_per_day"],
+            },
             "predictions": predictions,
+            "active_predictions": active_predictions,
             "active_alerts": len(alerts),
             "alert_models": [a["model"] for a in alerts],
+            "active_models": active_models,
             "server_usage_analysis": server_reports,
         }
 
