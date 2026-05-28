@@ -6,9 +6,9 @@ logger = logging.getLogger("helith.monitoring.repository")
 
 
 class MonitoringRepository:
-    """Maneja la persistencia de los logs de uso de tokens.
+    """Handles persistence of token usage logs.
 
-    Soporta Supabase como base principal y SQLite como fallback local.
+    Supports Supabase as primary database and SQLite as local fallback.
     """
 
     def __init__(self):
@@ -18,14 +18,14 @@ class MonitoringRepository:
         self._init_sqlite_db()
 
     def _init_sqlite_db(self):
-        """Inicializa las tablas de fallback en SQLite si no existen."""
+        """Initialize fallback tables in SQLite if they don't exist."""
         from core.db.connection import get_sqlite_connection
 
         conn = get_sqlite_connection()
         if not conn:
             logger.warning(
-                "No se pudo establecer conexión SQLite "
-                "para inicializar fallback."
+                "Could not establish SQLite connection "
+                "to initialize fallback."
             )
             return
 
@@ -56,19 +56,19 @@ class MonitoringRepository:
                 """
                 )
         except Exception as e:
-            logger.error(f"Error inicializando tablas en SQLite: {e}")
+            logger.error(f"Error initializing tables in SQLite: {e}")
         finally:
             conn.close()
 
     def save_log(self, log: TokenUsageLog):
-        """Guarda un registro de uso de tokens."""
+        """Save a token usage record."""
         if self.supabase:
             try:
                 self.supabase.table("token_usage_logs").insert(log.to_dict()).execute()
                 return
             except Exception as e:
                 logger.error(
-                    f"Error al guardar log de tokens en Supabase: {e}. Usando fallback."
+                    f"Error saving token log to Supabase: {e}. Using fallback."
                 )
 
         self._save_sqlite(log)
@@ -89,7 +89,7 @@ class MonitoringRepository:
                 )
                 return response.data or []
             except Exception as e:
-                logger.error(f"Error al leer logs de Supabase: {e}. Usando fallback.")
+                logger.error(f"Error reading logs from Supabase: {e}. Using fallback.")
 
         return self._get_usage_sqlite(days)
 

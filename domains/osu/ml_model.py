@@ -17,10 +17,9 @@ class PredictionResult(TypedDict):
 
 
 def calculate_expected_playtime(pp: float) -> float:
-    """Calcula el tiempo de juego esperado (en horas) basado en Performance Points
-    (pp).
+    """Calculate expected playtime (in hours) based on Performance Points (pp).
 
-    Usa la fórmula empírica de la extensión de Chrome:
+    Uses the empirical formula from the Chrome extension:
     Expected = -12 + 0.0781 * pp + 6.01e-6 * pp^2
     """
     if pp <= 0:
@@ -30,15 +29,14 @@ def calculate_expected_playtime(pp: float) -> float:
 
 
 def calculate_improvement_indicator(pp: float, play_time_seconds: int) -> float:
-    """Calcula el Improvement Indicator (ii) comparando el tiempo jugado esperado
-    vs real.
+    """Calculate Improvement Indicator (ii) comparing expected vs actual playtime.
 
     ii = Expected Playtime / Actual Playtime
 
-    Interpretación:
-    - ii = 1.0: Progreso promedio comparado con 10,000 jugadores.
-    - ii > 1.0: Progreso más rápido que el promedio (eficiente).
-    - ii < 1.0: Progreso más lento que el promedio.
+    Interpretation:
+    - ii = 1.0: Average progress compared to 10,000 players.
+    - ii > 1.0: Faster progress than average (efficient).
+    - ii < 1.0: Slower progress than average.
     """
     actual_hours = play_time_seconds / 3600.0
     if actual_hours <= 1.0:
@@ -54,26 +52,25 @@ def calculate_improvement_indicator(pp: float, play_time_seconds: int) -> float:
 def fit_log_linear_regression(
     history: List[Tuple[int, int]], ii: float = 1.0
 ) -> Tuple[float, float]:
-    """Ajusta una regresión lineal sobre el logaritmo de los rangos usando OLS en
-    Python puro.
+    """Fit log-linear regression over ranks using OLS in pure Python.
 
-    ln(rank) = m * dia + c
+    ln(rank) = m * day + c
 
-    Ajusta la pendiente 'm' según el Improvement Indicator (ii) del usuario.
-    Retorna la tupla (m_adjusted, c).
+    Adjusts the slope 'm' according to the user's Improvement Indicator (ii).
+    Returns the tuple (m_adjusted, c).
     """
     n = len(history)
     if n < 2:
         return 0.0, 0.0
 
-    # Extraer x (días) e y (logaritmo del rango)
+    # Extract x (days) and y (log of rank)
     x = [float(item[0]) for item in history]
     y = [math.log(float(item[1])) for item in history]
 
     mean_x = sum(x) / n
     mean_y = sum(y) / n
 
-    # Calcular covarianza y varianza para OLS
+    # Calculate covariance and variance for OLS
     numerator = sum((x[i] - mean_x) * (y[i] - mean_y) for i in range(n))
     denominator = sum((x[i] - mean_x) ** 2 for i in range(n))
 

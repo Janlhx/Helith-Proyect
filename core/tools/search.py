@@ -8,7 +8,7 @@ logger = logging.getLogger("helith.tools.search")
 
 
 class TavilySearchClient:
-    """Cliente para realizar búsquedas en la web usando la API de Tavily."""
+    """Client for web searches using the Tavily API."""
 
     @property
     def api_key(self) -> str:
@@ -20,13 +20,13 @@ class TavilySearchClient:
         return bool(key) and key != "your_tavily_key"
 
     async def search(self, query: str, max_results: int = 3) -> str:
-        """Busca en Tavily y retorna un resumen conciso de 2-3 puntos clave.
+        """Search Tavily and return a concise summary of 2-3 key points.
 
-        Optimiza el consumo de tokens y se ajusta a la personalidad de Helith.
+        Optimizes token consumption and aligns with Helith's personality.
         """
         if not self.enabled:
             logger.warning(
-                "API key de Tavily no configurada o vacía. Saltando búsqueda."
+                "Tavily API key not configured or empty. Skipping search."
             )
             return ""
 
@@ -44,14 +44,14 @@ class TavilySearchClient:
                     data = response.json()
                     results = data.get("results", [])
                     if not results:
-                        return "No se encontraron resultados relevantes."
+                        return "No relevant results found."
 
-                    # Resumimos a 2-3 puntos clave
+                    # Summarize to 2-3 key points
                     summary_points = []
                     for res in results[:max_results]:
-                        title = res.get("title", "Sin título")
+                        title = res.get("title", "No title")
                         snippet = res.get("content", "").strip()
-                        # Limitar snippet a 150 caracteres
+                        # Limit snippet to 150 characters
                         if len(snippet) > 150:
                             snippet = snippet[:147] + "..."
                         summary_points.append(f"- {title}: {snippet}")
@@ -59,11 +59,11 @@ class TavilySearchClient:
                     return "\n".join(summary_points)
                 else:
                     logger.error(
-                        f"Error de Tavily: {response.status_code} - {response.text}"
+                        f"Tavily error: {response.status_code} - {response.text}"
                     )
                     return ""
         except Exception as e:
-            logger.error(f"Excepción en la búsqueda de Tavily: {e}")
+            logger.error(f"Exception in Tavily search: {e}")
             return ""
 
 

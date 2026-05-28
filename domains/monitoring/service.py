@@ -24,7 +24,7 @@ ALERT_THRESHOLD = 0.80  # Alertar cuando se supera el 80% del límite diario
 
 
 class MonitoringService:
-    """Servicio de monitoreo y predicción del consumo de tokens."""
+    """Token consumption monitoring and prediction service."""
 
     def record_usage(
         self,
@@ -34,7 +34,7 @@ class MonitoringService:
         prompt_tokens: int,
         completion_tokens: int,
     ):
-        """Registra el uso de tokens de una llamada al LLM."""
+        """Record token usage from an LLM call."""
         log = TokenUsageLog(
             model_name=model_name,
             server_id=server_id,
@@ -45,7 +45,7 @@ class MonitoringService:
         )
         monitoring_repo.save_log(log)
         logger.info(
-            f"Uso registrado — Modelo: {model_name}, "
+            f"Usage recorded — Model: {model_name}, "
             f"Tokens: {log.total_tokens} (prompt={prompt_tokens}, "
             f"completion={completion_tokens})"
         )
@@ -54,12 +54,12 @@ class MonitoringService:
         """Calcula estadísticas de uso de los últimos N días."""
         logs = monitoring_repo.get_usage_last_days(days)
 
-        # Agrupar por día
+        # Group by day
         daily: dict[str, int] = {}
         total_messages = 0
         for log in logs:
             ts = log.get("timestamp", "")
-            day = ts[:10] if ts else "unknown"  # Solo la fecha YYYY-MM-DD
+            day = ts[:10] if ts else "unknown"  # Only the date YYYY-MM-DD
             daily[day] = daily.get(day, 0) + log.get("total_tokens", 0)
             total_messages += 1
 

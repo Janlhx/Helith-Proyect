@@ -9,12 +9,12 @@ class Settings(BaseSettings):
     )
 
     # Bot
-    VERSION: str = "0.1.0"
+    VERSION: str = "1.0.0"
     PREFIX: str = "h."
     DISCORD_TOKEN: str = ""
     DASHBOARD_PASSWORD: str = ""
 
-    # Base de datos
+    # Database
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
 
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     OSU_CLIENT_SECRET: str = ""
     OSU_MOCK_MODE: bool = False
 
-    # Entorno
+    # Environment
     ENVIRONMENT: str = "development"  # development | staging | production
 
 

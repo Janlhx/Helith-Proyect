@@ -4,19 +4,19 @@ logger = logging.getLogger("helith.conversation.repository")
 
 
 class ConversationRepository:
-    """Maneja la persistencia de los mensajes de conversación.
+    """Handles persistence of conversation messages.
 
-    Soporta Supabase como base principal y SQLite como fallback local.
+    Supports Supabase as primary database and SQLite as local fallback.
     """
 
     def __init__(self):
-        # Importación diferida para evitar problemas de linter y circulares
+        # Deferred import to avoid linter and circular dependency issues
         from core.db.connection import get_supabase_client
 
         self.supabase = get_supabase_client()
 
     def save_message(self, channel_id: str, user_id: str, role: str, content: str):
-        """Guarda un mensaje en el historial."""
+        """Save a message to the conversation history."""
         if self.supabase:
             try:
                 data = {
@@ -28,13 +28,13 @@ class ConversationRepository:
                 self.supabase.table("conversation_history").insert(data).execute()
                 return
             except Exception as e:
-                logger.error(f"Error al guardar en Supabase: {e}. Usando fallback.")
+                logger.error(f"Error saving to Supabase: {e}. Using fallback.")
 
         # Fallback a SQLite
         self._save_sqlite(channel_id, user_id, role, content)
 
     def get_history(self, channel_id: str, limit: int = 10):
-        """Recupera los últimos N mensajes de un canal para dar contexto."""
+        """Retrieve the last N messages from a channel for context."""
         if self.supabase:
             try:
                 response = (
@@ -45,16 +45,16 @@ class ConversationRepository:
                     .limit(limit)
                     .execute()
                 )
-                # Volteamos la lista para que quede en orden cronológico
+                # Reverse the list to maintain chronological order
                 return list(reversed(response.data))
             except Exception as e:
-                logger.error(f"Error al leer de Supabase: {e}. Usando fallback.")
+                logger.error(f"Error reading from Supabase: {e}. Using fallback.")
 
         # Fallback a SQLite
         return self._get_history_sqlite(channel_id, limit)
 
     def _save_sqlite(self, channel_id: str, user_id: str, role: str, content: str):
-        """Guarda el mensaje en la base de datos SQLite local."""
+        """Save the message to the local SQLite database."""
         from core.db.connection import get_sqlite_connection
 
         conn = get_sqlite_connection()
