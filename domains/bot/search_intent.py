@@ -58,15 +58,15 @@ DYNAMIC_FACTS = re.compile(
 DYNAMIC_PHRASES: tuple[re.Pattern[str], ...] = tuple(
     re.compile(p, re.IGNORECASE)
     for p in (
-        r"who won|quién ganó|quien gano|",
-        r"what happened with|qué pasó con|que paso con|",
-        r"who is the current|quién es el actual|quien es el actual|",
-        r"how much is|cuánto está|cuanto esta|",
-        r"at how much|a cuánto está|a cuanto esta|",
-        r"most recent|más reciente|mas reciente|",
-        r"the newest|lo más nuevo|lo mas nuevo|",
-        r"most recent album|álbum más reciente|album mas reciente|",
-        r"most recent song|canción más reciente|cancion mas reciente|",
+        r"who won|quién ganó|quien gano",
+        r"what happened with|qué pasó con|que paso con",
+        r"who is the current|quién es el actual|quien es el actual",
+        r"how much is|cuánto está|cuanto esta",
+        r"at how much|a cuánto está|a cuanto esta",
+        r"most recent|más reciente|mas reciente",
+        r"the newest|lo más nuevo|lo mas nuevo",
+        r"most recent album|álbum más reciente|album mas reciente",
+        r"most recent song|canción más reciente|cancion mas reciente",
     )
 )
 
@@ -150,6 +150,6 @@ def build_search_query(content: str) -> str:
         text = match.group(1).strip()
 
     if YEAR_QUESTION.search(text):
-        return "current year today's date"
+        return "año actual fecha de hoy"
 
     return text or content.strip()
