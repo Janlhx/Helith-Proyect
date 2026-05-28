@@ -115,7 +115,8 @@ class OsuApiClient:
 
                     if global_rank is None:
                         logger.warning(
-                            f"User '{actual_name}' has no global rank assigned (inactive)."
+                            f"User '{actual_name}' has no global rank "
+                            f"assigned (inactive)."
                         )
                         return None
 
@@ -133,7 +134,9 @@ class OsuApiClient:
             return None
 
     def _generate_mock_user_data(self, username: str) -> Dict[str, Any]:
-        """Generate a simulated osu! profile deterministically using the hash of the name.
+        """Generate a simulated osu! profile deterministically.
+
+        Uses the hash of the name to ensure consistent mock results.
 
         This ensures that querying 'Litxe' always gives the same mock result in tests.
         """
