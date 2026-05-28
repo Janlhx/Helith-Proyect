@@ -153,3 +153,5 @@ def build_search_query(content: str) -> str:
         return "año actual fecha de hoy"
 
     return text or content.strip()
+
+#hello
