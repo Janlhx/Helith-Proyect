@@ -14,31 +14,31 @@ logger = logging.getLogger("helith.osu.service")
 
 
 class OsuService:
-    """Servicio central de coordinación para la predicción de rangos de osu!."""
+    """Core coordination service for osu! rank prediction."""
 
     async def process_slash_predict(
         self, username: str, target_rank: int, server_id: str, user_id: str
     ) -> str:
-        """Procesa la predicción estructural desde un Slash Command.
+        """Processes the structural prediction from a Slash Command.
 
-        1. Consulta los datos actuales e históricos de la API de osu!.
-        2. Registra el snapshot de progreso en la BD.
-        3. Calcula el Improvement Indicator y corre la regresión log-lineal.
-        4. Genera respuesta final con la personalidad de Helith.
+        1. Queries current and historical data from the osu! API.
+        2. Registers the progress snapshot in the DB.
+        3. Calculates the Improvement Indicator and runs the log-linear regression.
+        4. Generates the final response using Helith's personality.
         """
         logger.info(
-            f"Procesando predicción de osu! para: '{username}' al rank '{target_rank}'"
+            f"Processing osu! prediction for: '{username}' to rank '{target_rank}'"
         )
 
         if target_rank <= 0:
             target_rank = 5000
 
-        # 1. Consultar datos en la API de osu! (o mock)
+        # 1. Query data from the osu! API (or mock)
         user_data = await osu_api_client.get_user_data(username)
         if not user_data:
             return (
-                f"No he podido encontrar al usuario '{username}' en osu!. "
-                "Por favor, verifica que el nombre de usuario sea válido."
+                f"I could not find user '{username}' on osu!. "
+                "Please verify that the username is valid."
             )
 
         osu_id = user_data["osu_id"]
@@ -48,10 +48,10 @@ class OsuService:
         play_time = user_data["play_time"]
         rank_history = user_data["rank_history"]
 
-        # 2. Calcular el Improvement Indicator (ii)
+        # 2. Calculate the Improvement Indicator (ii)
         ii = calculate_improvement_indicator(pp, play_time)
 
-        # 3. Registrar snapshot de progreso diario en la base de datos
+        # 3. Register daily progress snapshot in the database
         snapshot = OsuSnapshot(
             osu_id=osu_id,
             username=actual_username,
@@ -62,16 +62,16 @@ class OsuService:
         )
         osu_repo.save_snapshot(snapshot)
 
-        # 4. Generar la serie temporal para la regresión
+        # 4. Generate the time series for the regression
         if not rank_history or len(rank_history) < 2:
             history_series = [(0, current_rank), (1, current_rank)]
         else:
             history_series = [(i, rank) for i, rank in enumerate(rank_history)]
 
-        # 5. Entrenar y predecir
+        # 5. Train and predict
         prediction = predict_days_to_rank(history_series, target_rank, ii)
 
-        # 6. Redactar respuesta final con el pool de LLMs manteniendo la identidad
+        # 6. Draft final response with LLM pool maintaining identity
         response = await self._generate_conversational_response(
             actual_username=actual_username,
             current_rank=current_rank,
@@ -96,24 +96,24 @@ class OsuService:
         user_id: str,
         server_id: str,
     ) -> str:
-        """Pide al LLM que redacte la predicción matemática con la personalidad
-        exacta de Helith.
+        """Asks the LLM to write the mathematical prediction using Helith's
+        exact personality.
         """
         prompt = (
-            "Presenta los resultados del análisis predictivo de rango de osu! "
-            "de forma seria, directa y analítica.\n"
-            f"Jugador: {actual_username}\n"
-            f"Rango actual: #{current_rank:,} (PP: {pp:.2f})\n"
-            f"Rango Objetivo: #{target_rank:,}\n"
-            f"Índice de Mejora (ii): {ii:.2f}\n"
-            f"Resultado matemático del modelo: {model_message}\n\n"
-            "Instrucciones de redacción:\n"
-            "- Habla en primera persona, manteniendo la identidad de Helith "
-            "(reservada, sobria, sin rodeos).\n"
-            "- Enfatiza el análisis lógico e interpreta los números.\n"
-            "- Mantén la respuesta concisa (máximo 3-4 líneas).\n"
-            "- Evita saludos informales, emojis infantiles o formalidades de "
-            "servicio de atención al cliente."
+            "Present the results of the osu! rank predictive analysis "
+            "in a serious, direct, and analytical manner.\n"
+            f"Player: {actual_username}\n"
+            f"Current rank: #{current_rank:,} (PP: {pp:.2f})\n"
+            f"Target rank: #{target_rank:,}\n"
+            f"Improvement Index (ii): {ii:.2f}\n"
+            f"Mathematical result of the model: {model_message}\n\n"
+            "Writing instructions:\n"
+            "- Speak in the first person, maintaining Helith's identity "
+            "(reserved, sober, straightforward).\n"
+            "- Emphasize logical analysis and interpret the numbers.\n"
+            "- Keep the response concise (maximum 3-4 lines).\n"
+            "- Avoid informal greetings, childish emojis, or customer "
+            "service pleasantries."
         )
 
         try:
@@ -124,11 +124,11 @@ class OsuService:
                 user_id=user_id,
             )
         except Exception as e:
-            logger.error(f"Error al generar respuesta conversacional con el LLM: {e}")
-            # Retorno de fallback directo si el LLM colapsa
+            logger.error(f"Error generating conversational response with the LLM: {e}")
+            # Direct fallback return if LLM fails
             return (
-                f"Análisis de {actual_username}: Rango actual #{current_rank:,} "
-                f"({pp:.2f} PP). Rango objetivo #{target_rank:,}. {model_message}"
+                f"Analysis for {actual_username}: Current rank #{current_rank:,} "
+                f"({pp:.2f} PP). Target rank #{target_rank:,}. {model_message}"
             )
 
 

@@ -17,7 +17,7 @@ class IntentRouter:
         return "conversation"
 
     def needs_web_search(self, content: str) -> bool:
-        """Determina si una consulta requiere búsqueda web (señales generalizadas)."""
+        """Determines if a query requires web search (generalized signals)."""
         return needs_web_search(content)
 
     def build_search_query(self, content: str) -> str:

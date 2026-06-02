@@ -8,17 +8,17 @@ logger = logging.getLogger("helith.admin.router")
 
 
 class AdminRouter:
-    """Enruta comandos administrativos mediante Slash Commands."""
+    """Routes administrative tasks via slash commands."""
 
     async def handle_slash_help(self, interaction: discord.Interaction):
-        """Procesa el comando /help y retorna el menú interactivo."""
+        """Processes the /help command and returns the interactive menu."""
         try:
-            logger.info("AdminRouter procesando slash command /help")
+            logger.info("AdminRouter processing slash command /help")
             embed = admin_service.get_help_embed("home")
             view = HelpMenuView()
             await interaction.response.send_message(embed=embed, view=view)
         except Exception as e:
-            logger.error(f"Error en AdminRouter: {e}")
+            logger.error(f"Error in AdminRouter: {e}")
             if not interaction.response.is_done():
                 await interaction.response.send_message(
                     "An error occurred loading the help panel.", ephemeral=True

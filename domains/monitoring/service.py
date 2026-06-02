@@ -6,10 +6,10 @@ from domains.monitoring.repository import monitoring_repo
 
 logger = logging.getLogger("helith.monitoring.service")
 
-# Límites gratuitos aproximados (tokens por día)
-# Gemini Flash: ~1M tokens/día gratis
-# NVIDIA NIM: sin cuota estricta pública — 5M como referencia operativa
-# Groq: ~500K tokens/día gratis
+# Approximate free limits (tokens per day)
+# Gemini Flash: ~1M tokens/day free
+# NVIDIA NIM: no strict public quota — 5M as operational reference
+# Groq: ~500K tokens/day free
 MODEL_DAILY_LIMITS: dict[str, int] = {
     "gemini-2.5-flash": 1_000_000,
     "nvidia/deepseek-ai/deepseek-v4-flash": 5_000_000,
@@ -20,7 +20,7 @@ MODEL_DAILY_LIMITS: dict[str, int] = {
     "llama-3.1-8b-instant": 500_000,
     "meta-llama/llama-4-scout-17b-16e-instruct": 500_000,
 }
-ALERT_THRESHOLD = 0.80  # Alertar cuando se supera el 80% del límite diario
+ALERT_THRESHOLD = 0.80  # Alert when exceeding 80% of daily limit
 
 
 class MonitoringService:
@@ -51,7 +51,7 @@ class MonitoringService:
         )
 
     def get_daily_stats(self, days: int = 7) -> dict:
-        """Calcula estadísticas de uso de los últimos N días."""
+        """Calculates usage statistics of the last N days."""
         logs = monitoring_repo.get_usage_last_days(days)
 
         # Group by day
@@ -76,9 +76,9 @@ class MonitoringService:
         }
 
     def predict_exhaustion(self, model_name: str) -> dict:
-        """Predice en cuántos días se agotará la cuota gratuita del modelo.
+        """Predicts in how many days the model's free quota will be exhausted.
 
-        Usa una regresión lineal simple (promedio de los últimos 7 días).
+        Uses a simple linear regression (average of the last 7 days).
         """
         logs_7d = monitoring_repo.get_usage_last_days(7)
 
@@ -98,7 +98,7 @@ class MonitoringService:
                 "pct_used": 0.0,
                 "days_until_exhaustion": None,
                 "alert": False,
-                "message": "Sin datos suficientes para predicción.",
+                "message": "Insufficient data for prediction.",
             }
 
         pct_used = avg_daily / daily_limit
@@ -114,31 +114,31 @@ class MonitoringService:
             "days_until_exhaustion": (round(days_until, 1) if days_until else None),
             "alert": alert,
             "message": (
-                f"⚠️ Alerta: consumiendo el {round(pct_used * 100, 1)}% "
-                "del límite diario."
+                f"⚠️ Alert: consuming {round(pct_used * 100, 1)}% "
+                "of the daily limit."
                 if alert
-                else f"✅ Consumo normal: {round(pct_used * 100, 1)}% "
-                "del límite diario."
+                else f"✅ Normal consumption: {round(pct_used * 100, 1)}% "
+                "of the daily limit."
             ),
         }
 
     def record_rate_limit(self, server_id: str, user_id: str):
-        """Registra un impacto de rate-limit."""
+        """Records a rate limit hit."""
         monitoring_repo.save_rate_limit_hit(server_id, user_id)
         logger.warning(
-            f"Rate limit alcanzado — Servidor: {server_id}, Usuario: {user_id}"
+            f"Rate limit reached — Server: {server_id}, User: {user_id}"
         )
 
     def get_server_analysis(self, days: int = 7) -> dict:
-        """Analiza el comportamiento, volumen de tokens e infracciones por servidor.
+        """Analyzes behavior, token volume, and infractions per server.
 
-        Ofrece recomendaciones de mitigación (cooldowns recomendados).
-        Deduplica server IDs (normaliza strips de espacios en el ID).
+        Offers mitigation recommendations (recommended cooldowns).
+        Deduplicates server IDs (normalizes spacing strips in the ID).
         """
         usage_logs = monitoring_repo.get_server_usage_last_days(days)
         rate_logs = monitoring_repo.get_rate_limit_hits_last_days(days)
 
-        # Agrupar uso por servidor — normalizamos el ID quitando espacios
+        # Group usage by server - normalize ID by stripping spaces
         servers: dict[str, dict] = {}
         for entry in usage_logs:
             raw_srv = entry.get("server_id", "DM")
@@ -152,7 +152,7 @@ class MonitoringService:
             servers[srv]["total_tokens"] += entry.get("total_tokens", 0)
             servers[srv]["messages"] += 1
 
-        # Agrupar rate limits por servidor
+        # Group rate limits by server
         for entry in rate_logs:
             raw_srv = entry.get("server_id", "DM")
             srv = str(raw_srv).strip() if raw_srv else "DM"
@@ -164,29 +164,29 @@ class MonitoringService:
                 }
             servers[srv]["rate_limits"] += 1
 
-        # Analizar y recomendar límites dinámicos
+        # Analyze and recommend dynamic limits
         analysis = {}
         for srv, data in servers.items():
             avg_tokens = data["total_tokens"] / days if days > 0 else 0
             avg_msg = data["messages"] / days if days > 0 else 0
 
-            # Clasificar nivel de uso y formular sugerencias preventivas
+            # Classify usage level and formulate preventive suggestions
             if avg_tokens > 100000 or data["rate_limits"] > 15:
-                status = "CRÍTICO"
+                status = "CRITICAL"
                 recommendation = (
-                    "Incrementar cooldown a 180s y limitar a 2 mensajes "
-                    "por minuto por usuario."
+                    "Increase cooldown to 180s and limit to 2 messages "
+                    "per minute per user."
                 )
             elif avg_tokens > 30000 or data["rate_limits"] > 5:
-                status = "ADVERTENCIA"
+                status = "WARNING"
                 recommendation = (
-                    "Incrementar cooldown a 120s o limitar a 3 mensajes "
-                    "por minuto por usuario."
+                    "Increase cooldown to 120s or limit to 3 messages "
+                    "per minute per user."
                 )
             else:
                 status = "NORMAL"
                 recommendation = (
-                    "Mantener cooldown actual de 60s (5 mensajes por minuto)."
+                    "Maintain current cooldown of 60s (5 messages per minute)."
                 )
 
             analysis[srv] = {
@@ -203,7 +203,7 @@ class MonitoringService:
         return analysis
 
     def get_full_report(self) -> dict:
-        """Genera el reporte completo para el dashboard."""
+        """Generates the full report for the dashboard."""
         stats = self.get_daily_stats(days=7)
         stats_30d = self.get_daily_stats(days=30)
 
@@ -211,7 +211,7 @@ class MonitoringService:
         for model in MODEL_DAILY_LIMITS:
             predictions[model] = self.predict_exhaustion(model)
 
-        # Solo incluir modelos con datos reales (evitar ruido)
+        # Only include models with real data to avoid noise
         active_predictions = {
             m: p for m, p in predictions.items() if p["avg_daily_tokens"] > 0
         }
@@ -219,7 +219,7 @@ class MonitoringService:
         alerts = [p for p in predictions.values() if p["alert"]]
         server_reports = self.get_server_analysis(days=7)
 
-        # Modelos activos ordenados por consumo
+        # Active models sorted by consumption
         by_model = stats.get("by_model", {})
         active_models = sorted(by_model.items(), key=lambda x: x[1], reverse=True)
 

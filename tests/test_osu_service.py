@@ -8,13 +8,13 @@ from domains.osu.service import osu_service
 @pytest.mark.asyncio
 @patch("domains.osu.service.osu_api_client")
 async def test_process_slash_predict_user_not_found(mock_osu_api_client):
-    """Si el usuario no existe, devuelve el mensaje de error controlado."""
+    """If user does not exist, returns controlled error message."""
     mock_osu_api_client.get_user_data = AsyncMock(return_value=None)
 
     response = await osu_service.process_slash_predict(
         "unknown_user", 5000, "sv1", "usr1"
     )
-    assert "No he podido encontrar al usuario" in response
+    assert "I could not find user" in response
 
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ async def test_process_slash_predict_user_not_found(mock_osu_api_client):
 async def test_process_slash_predict_success(
     mock_llm_pool, mock_repo, mock_osu_api_client
 ):
-    """Prueba flujo completo y matemático de predicción con guardado histórico."""
+    """Tests the full flow and mathematical prediction logic with historic saving."""
     mock_osu_api_client.get_user_data = AsyncMock(
         return_value={
             "osu_id": 123,
@@ -42,7 +42,7 @@ async def test_process_slash_predict_success(
 
     response = await osu_service.process_slash_predict("TestUser", 5000, "sv1", "usr1")
 
-    # Se debe guardar el snapshot para que la BD relacional funcione en el futuro
+    # Snapshot should be saved
     mock_repo.save_snapshot.assert_called_once()
     assert response == "Predicción final del LLM estructurada."
 
@@ -54,7 +54,7 @@ async def test_process_slash_predict_success(
 async def test_process_slash_predict_invalid_target(
     mock_llm_pool, mock_repo, mock_osu_api_client
 ):
-    """Si el rango objetivo es <= 0, se convierte a 5000 por seguridad."""
+    """If target rank is <= 0, it falls back to 5000 for safety."""
     mock_osu_api_client.get_user_data = AsyncMock(
         return_value={
             "osu_id": 123,
@@ -70,6 +70,6 @@ async def test_process_slash_predict_invalid_target(
 
     await osu_service.process_slash_predict("TestUser", -10, "sv1", "usr1")
 
-    # Verificamos que el target_rank enviado al generador se corrigió a 5000
+    # Verify that target_rank in prompt was corrected to 5000
     kwargs = mock_llm_pool.generate_response.call_args.kwargs
-    assert "Rango Objetivo: #5,000" in kwargs["prompt"]
+    assert "Target rank: #5,000" in kwargs["prompt"]

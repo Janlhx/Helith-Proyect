@@ -18,7 +18,7 @@ def service():
 async def test_process_message_success(
     mock_llm_pool, mock_repo, mock_router, mock_embed, service
 ):
-    """Prueba el flujo feliz de la conversación con memorias."""
+    """Test the happy path of conversation with memories."""
     # 1. Configurar mocks
     mock_repo.get_history.return_value = [
         {"role": "user", "content": "hola"},
@@ -29,7 +29,7 @@ async def test_process_message_success(
     mock_embed.return_value = [0.0] * 768
     mock_router.needs_web_search.return_value = False
 
-    # Simulamos la respuesta de la IA
+    # Mock AI response
     mock_llm_pool.generate_response = AsyncMock(
         return_value="todo bien por acá, tranquila"
     )
@@ -71,7 +71,7 @@ async def test_process_message_success(
     args, kwargs = mock_llm_pool.generate_response.call_args
     assert "prompt" in kwargs
     assert "system_prompt" in kwargs
-    assert "Tú (Helith): hola, qué hay" in kwargs["prompt"]
+    assert "You (Helith): hola, qué hay" in kwargs["prompt"]
 
 
 @pytest.mark.asyncio
@@ -82,12 +82,12 @@ async def test_process_message_success(
 async def test_process_message_fallback_error(
     mock_llm_pool, mock_repo, mock_router, mock_embed, service
 ):
-    """Prueba que el bot responda con el mensaje de emergencia si las APIs fallan."""
+    """Test that the bot responds with the fallback message if APIs fail."""
     mock_embed.return_value = [0.0] * 768
     mock_router.needs_web_search.return_value = False
     mock_repo.search_memories.return_value = []
 
-    # Simular que el LLM tira una excepción (API caída, sin saldo, etc.)
+    # Simulating LLM throwing an exception
     mock_llm_pool.generate_response = AsyncMock(
         side_effect=Exception("Todas las APIs fallaron")
     )
@@ -96,4 +96,4 @@ async def test_process_message_fallback_error(
     response = await service.process_message("canal_1", "server_1", "user_1", "mensaje")
 
     # 3. Verificar que responde la frase por defecto y no rompe el programa
-    assert response == "Me cuesta procesar eso ahora mismo. Inténtalo de nuevo."
+    assert response == "I'm having trouble processing that right now. Please try again."

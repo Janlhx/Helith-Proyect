@@ -11,7 +11,7 @@ logger = logging.getLogger("helith.conversation.service")
 
 
 class ConversationService:
-    """Orquesta la lógica de conversación del bot."""
+    """Orchestrates the bot's conversation logic."""
 
     async def process_message(
         self,
@@ -80,47 +80,47 @@ class ConversationService:
         system_prompt = HELITH_PERSONALITY
         if memory_context or search_context:
             system_prompt += (
-                "\n\nINSTRUCCIÓN CRÍTICA DE CONTEXTO:\n"
-                "A continuación, en tu historial de chat se te proporcionarán datos "
-                "contextuales (Búsqueda web o Memorias pasadas). Úsalos como "
-                "TU PROPIO CONOCIMIENTO. NUNCA digas que no tienes acceso a "
-                "internet o que no estás segura. Responde con total confianza."
+                "\n\nCRITICAL CONTEXT INSTRUCTION:\n"
+                "Below, in your chat history, contextual data will be provided "
+                "(Web search or past memories). Treat them as YOUR OWN KNOWLEDGE. "
+                "NEVER say you do not have internet access or that you are not sure. "
+                "Respond with absolute confidence."
             )
 
-        # Formatear el historial como un diálogo y añadir los contextos al inicio
+        # Format history as a dialogue and prepend the contexts
         full_prompt = ""
         
         if search_triggered:
             if search_context:
                 full_prompt += (
-                    "[DATOS DE BÚSQUEDA WEB PARA LA PREGUNTA ACTUAL]\n"
+                    "[WEB SEARCH DATA FOR THE CURRENT QUERY]\n"
                     f"{search_context}\n\n"
                 )
             else:
                 full_prompt += (
-                    "[NOTA INTERNA]\n"
-                    "El usuario pidió datos actuales pero no se encontraron "
-                    "resultados. Sé honesta y dilo brevemente.\n\n"
+                    "[INTERNAL NOTE]\n"
+                    "The user asked for current data but no results were found. "
+                    "Be honest and state this briefly.\n\n"
                 )
                 
         if memory_context:
             full_prompt += (
-                "[MEMORIAS RECUPERADAS DEL SERVIDOR]\n"
+                "[RETRIEVED SERVER MEMORIES]\n"
                 f"{memory_context}\n\n"
             )
 
-        full_prompt += "--- HISTORIAL DE CHAT ---\n"
+        full_prompt += "--- CHAT HISTORY ---\n"
         for msg in history:
-            role_label = "Tú (Helith):" if msg["role"] == "assistant" else "Usuario:"
+            role_label = "You (Helith):" if msg["role"] == "assistant" else "User:"
             full_prompt += f"{role_label} {msg['content']}\n"
 
         logger.info(
-            f"Generando respuesta para canal {channel_id} con "
-            f"{len(history)} mensajes de historial."
+            f"Generating response for channel {channel_id} with "
+            f"{len(history)} history messages."
         )
 
         try:
-            # 6. Generar respuesta usando el pool de LLMs
+            # 6. Generate response using LLM pool
             response = await llm_pool.generate_response(
                 prompt=full_prompt,
                 system_prompt=system_prompt,
@@ -128,7 +128,7 @@ class ConversationService:
                 user_id=user_id,
             )
 
-            # 7. Guardar respuesta del bot en historial y memorias
+            # 7. Save bot response to history and memories
             conversation_repo.save_message(channel_id, "helith", "assistant", response)
             assistant_embedding = await generate_embedding(response)
             conversation_repo.save_memory(
@@ -141,8 +141,8 @@ class ConversationService:
 
             return response
         except Exception as e:
-            logger.error(f"Error en ConversationService: {e}")
-            return "Me cuesta procesar eso ahora mismo. Inténtalo de nuevo."
+            logger.error(f"Error in ConversationService: {e}")
+            return "I'm having trouble processing that right now. Please try again."
 
 
 conversation_service = ConversationService()

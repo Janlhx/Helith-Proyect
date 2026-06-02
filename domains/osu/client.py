@@ -12,12 +12,11 @@ logger = logging.getLogger("helith.osu.client")
 
 
 class OsuApiClient:
-    """Cliente asíncrono para interactuar con la API v2 de osu!.
+    """Asynchronous client to interact with the osu! API v2.
 
-    Implementa autenticación OAuth2 de tipo Client Credentials y almacenamiento en
-    caché del token.
-    Soporta un modo "Mock" robusto y determinista para testeo local si faltan
-    credenciales.
+    Implements OAuth2 Client Credentials authentication and token caching.
+    Supports a robust and deterministic "Mock" mode for local testing if
+    credentials are missing.
     """
 
     def __init__(self):
@@ -61,7 +60,7 @@ class OsuApiClient:
             self._access_token = data["access_token"]
             expires_in = data.get("expires_in", 86400)
             self._token_expires_at = now + expires_in
-            logger.info("Token de acceso de osu! obtenido con éxito.")
+            logger.info("osu! access token obtained successfully.")
             return self._access_token
 
     async def get_user_data(self, username: str) -> Optional[Dict[str, Any]]:
@@ -140,18 +139,18 @@ class OsuApiClient:
 
         This ensures that querying 'Litxe' always gives the same mock result in tests.
         """
-        # Crear un seed determinista basado en el nombre de usuario
+        # Create deterministic seed based on username
         hash_val = int(hashlib.md5(username.lower().encode("utf-8")).hexdigest(), 16)
         rng = random.Random(hash_val)
 
-        # Generar estadísticas deterministas basadas en el hash
+        # Generate deterministic statistics based on hash
         osu_id = rng.randint(100000, 30000000)
 
-        # El rango base va de 2,000 a 250,000
+        # The base rank goes from 2,000 to 250,000
         start_rank = rng.randint(2000, 250000)
 
-        # PP estimado según el rango (aproximado a la curva de osu!)
-        # Un rango de 5,000 suele tener aprox. 7,000 pp. 150,000 tiene aprox. 1,500 pp.
+        # Estimated PP based on rank (approximated to the osu! curve)
+        # A rank of 5,000 usually has approx 7,000 pp. 150,000 has approx 1,500 pp.
         if start_rank < 5000:
             pp = 8000.0 - (start_rank * 0.2)
         elif start_rank < 50000:
@@ -160,12 +159,12 @@ class OsuApiClient:
             pp = 3000.0 - (start_rank * 0.01)
         pp = max(100.0, pp)
 
-        # Tiempo de juego en segundos (promedio de 50 a 1500 horas)
+        # Play time in seconds (average of 50 to 1500 hours)
         play_time = int(rng.randint(180000, 5400000))
 
-        # Generar un historial de 90 días con tendencia a la mejora (rango disminuyendo)
-        # Si el primer dígito del hash es par, el jugador está mejorando de verdad.
-        # Si es impar, está un poco estancado o empeorando de rango.
+        # Generate 90-day history with improvement trend (rank decreasing)
+        # If the hash value is even, the player is improving.
+        # If odd, they are stuck or losing rank.
         trend_direction = -1 if (hash_val % 2 == 0) else 0.1
 
         history: List[int] = []
@@ -174,14 +173,14 @@ class OsuApiClient:
         )
 
         for _ in range(90):
-            # Añadir pequeña fluctuación diaria
+            # Add small daily fluctuation
             fluctuation = rng.randint(-15, 15)
-            # Cambiar rango con la tendencia general
+            # Change rank with general trend
             current_step_rank += int(rng.uniform(2, 30) * trend_direction) + fluctuation
             current_step_rank = max(1, current_step_rank)
             history.append(current_step_rank)
 
-        # El rango de hoy (el último día en la lista) es el que asignamos como actual
+        # Today's rank (the last day in the list) is what we assign as current
         final_rank = history[-1]
 
         return {
