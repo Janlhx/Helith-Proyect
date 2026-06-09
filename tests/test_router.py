@@ -45,7 +45,7 @@ async def test_monitoring_text_metrics(mock_monitoring_service):
 async def test_osu_slash_predict(mock_osu_service):
     """Test that the osu! slash command responds using defer()."""
     mock_osu_service.process_slash_predict = AsyncMock(
-        return_value="Predicción simulada."
+        return_value="Simulated prediction."
     )
     mock_interaction = AsyncMock()
 
@@ -56,4 +56,4 @@ async def test_osu_slash_predict(mock_osu_service):
     # Must notify Discord with a defer() to avoid timeouts
     mock_interaction.response.defer.assert_called_once()
     # Then it must send the response in the followup
-    mock_interaction.followup.send.assert_called_once_with("Predicción simulada.")
+    mock_interaction.followup.send.assert_called_once_with("Simulated prediction.")

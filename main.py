@@ -50,6 +50,12 @@ def index():
     return jsonify({"name": "Helith", "status": "running"})
 
 
+@app.route("/ping")
+def ping():
+    """Ultra-lightweight keep-alive endpoint for UptimeRobot."""
+    return "pong", 200
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     import secrets
@@ -76,7 +82,7 @@ def dashboard():
 @app.route("/api/metrics")
 def api_metrics():
     import secrets
-    # Permite acceso vía sesión (navegador) o Authorization header (scripts)
+    # Allows access via session (browser) or Authorization header (scripts)
     auth_header = request.headers.get("Authorization", "")
     expected = f"Bearer {settings.DISCORD_TOKEN[:20]}"
     if not session.get("authenticated") and not secrets.compare_digest(
@@ -178,14 +184,14 @@ async def on_ready():
 
 @bot.event
 async def on_error(event, *args, **kwargs):
-    logger.exception(f"Error en evento {event}")
+    logger.exception(f"Unhandled error in event: {event}")
 
 
-# Mapeo de cooldowns por usuario: 5 mensajes por minuto
+# User cooldown: 5 messages per minute
 user_cooldown = commands.CooldownMapping.from_cooldown(
     5, 60.0, commands.BucketType.user
 )
-# Mapeo de cooldowns por servidor: 20 mensajes por minuto
+# Guild cooldown: 20 messages per minute
 guild_cooldown = commands.CooldownMapping.from_cooldown(
     20, 60.0, commands.BucketType.guild
 )
@@ -203,12 +209,12 @@ async def on_message(message):
 
     content = message.content.strip()
 
-    # Comando oculto para sincronizar comandos slash
+    # Hidden command to sync slash commands
     if content.startswith("h.sync"):
-        # Protección de seguridad: solo el dueño del bot puede sincronizar
+        # Security guard: only the bot owner can sync
         if not await bot.is_owner(message.author):
             await message.reply(
-                "No tienes permisos suficientes para sincronizar el árbol de comandos."
+                "You do not have sufficient permissions to sync the command tree."
             )
             return
         try:
@@ -252,7 +258,7 @@ async def on_message(message):
             await message.reply(f"Error syncing commands: {e}")
         return
 
-    # Comando oculto para diagnosticar Tavily
+    # Hidden command to diagnose Tavily
     if content.startswith("h.tavily"):
         if not await bot.is_owner(message.author):
             return
@@ -279,7 +285,7 @@ async def on_message(message):
             await message.reply(f"⚠️ Exception: {e}")
         return
 
-    # Comando oculto para métricas
+    # Hidden command for text-based metrics
     if content.startswith("h.metrics"):
         if not await bot.is_owner(message.author):
             return
@@ -296,11 +302,11 @@ async def on_message(message):
     is_mentioned = bot.user.mentioned_in(message)
     is_dm = isinstance(message.channel, discord.DMChannel)
 
-    # Si la intención es meramente conversacional, exigimos mención o DM
+    # If the intent is purely conversational, require a mention or DM
     if intent == "conversation" and not (is_mentioned or is_dm):
         return
 
-    # 1. Aplicar cooldown por usuario
+    # 1. Apply per-user cooldown
     bucket_user = user_cooldown.get_bucket(message)
     retry_user = bucket_user.update_rate_limit()
     if retry_user:
@@ -315,7 +321,7 @@ async def on_message(message):
         )
         return
 
-    # 2. Aplicar cooldown por servidor (solo si no es DM)
+    # 2. Apply per-guild cooldown (only if not a DM)
     if not is_dm:
         bucket_guild = guild_cooldown.get_bucket(message)
         retry_guild = bucket_guild.update_rate_limit()
@@ -331,18 +337,18 @@ async def on_message(message):
             )
             return
 
-    # Limpiar la mención del texto de manera robusta
+    # Robustly strip the mention from the text
     content = re.sub(rf"<@!?{bot.user.id}>", "", message.content).strip()
     if not content:
-        content = "hello"  # Si solo nos mencionaron, saludamos
+        content = "hello"  # If only mentioned with no text, greet back
 
-    # Derivar según la intención clasificada
+    # Route based on classified intent
     response = None
     server_id_str = str(message.guild.id) if message.guild else "DM"
 
     async with message.channel.typing():
         if intent == "conversation":
-            # Por defecto: Conversación
+            # Default: Conversation
             from domains.conversation.service import conversation_service
 
             response = await conversation_service.process_message(
@@ -360,11 +366,30 @@ async def on_message(message):
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
+def _start_bot_thread():
+    """Start the Discord bot in a background daemon thread."""
+    import asyncio
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(bot.start(settings.DISCORD_TOKEN))
+    except Exception as e:
+        logger.critical(f"Discord bot crashed: {e}", exc_info=True)
+    finally:
+        loop.close()
+
+
+# Auto-start bot when imported by Gunicorn (not running as __main__)
+if __name__ != "__main__":
+    bot_thread = threading.Thread(target=_start_bot_thread, daemon=True, name="discord-bot")
+    bot_thread.start()
+    logger.info("Discord bot thread started (Gunicorn mode)")
+
+
 if __name__ == "__main__":
-    # Flask en un thread separado
+    # Dev mode: Flask in thread, bot on main thread (same behaviour as before)
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
-    logger.info("Keep-alive server started")
-
-    # Bot en el thread principal
+    logger.info("Keep-alive server started (dev mode)")
     bot.run(settings.DISCORD_TOKEN)

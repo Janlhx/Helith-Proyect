@@ -296,6 +296,7 @@ Runs on every push and PR:
 | Pool of comparable LLMs | Single provider with weak fallback | The main issue with Dalet was the fallback to a weak Llama model. Fallbacks must be transparent. |
 | English as Core Language | Bilingual (ES/EN) Module | Maintaining two system prompts and dual translations is a maintenance nightmare. English provides better LLM reasoning and global reach. |
 | uv over pip/poetry | pip, poetry | Faster, modern, better dependency management. |
+| Gunicorn with Threaded Bot | Flask dev server (`app.run()`), separate hosting | Flask's dev server is fragile and single-threaded. Gunicorn with `--workers 1 --threads 4` provides a production-grade web server while keeping the Discord bot running safely in a single daemon thread. |
 
 ---
 

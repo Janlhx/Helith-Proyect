@@ -37,14 +37,14 @@ async def test_process_slash_predict_success(
     )
 
     mock_llm_pool.generate_response = AsyncMock(
-        return_value="Predicción final del LLM estructurada."
+        return_value="Structured final LLM prediction."
     )
 
     response = await osu_service.process_slash_predict("TestUser", 5000, "sv1", "usr1")
 
     # Snapshot should be saved
     mock_repo.save_snapshot.assert_called_once()
-    assert response == "Predicción final del LLM estructurada."
+    assert response == "Structured final LLM prediction."
 
 
 @pytest.mark.asyncio

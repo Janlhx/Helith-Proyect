@@ -1,6 +1,6 @@
 """
-Helith — Script de métricas de consumo de tokens
-Uso: python scripts/check_metrics.py
+Helith — Token usage metrics script
+Usage: python scripts/check_metrics.py
 """
 
 import os
@@ -9,13 +9,13 @@ import sys
 try:
     import requests
 except ImportError:
-    print("❌ Necesitas tener 'requests' instalado.")
-    print("   Ejecuta: pip install requests")
+    print("❌ You need 'requests' installed.")
+    print("   Run: pip install requests")
     sys.exit(1)
 
 
-# ── Configuración ─────────────────────────────────────────────────────────────
-# Carga el token desde .env si existe, si no lo pide manualmente
+# ── Configuration ──────────────────────────────────────────────────────────────
+# Loads the token from .env if it exists, otherwise prompts the user
 def load_token() -> str:
     env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
     if os.path.exists(env_path):
@@ -27,34 +27,34 @@ def load_token() -> str:
 
     token = os.environ.get("DISCORD_TOKEN", "")
     if not token:
-        token = input("Introduce tu DISCORD_TOKEN: ").strip()
+        token = input("Enter your DISCORD_TOKEN: ").strip()
     return token
 
 
 RENDER_URL = os.environ.get(
     "HELITH_URL",
-    "https://helith-proyect-staging-phase.onrender.com",  # Cambia a tu URL real
+    "https://helith-proyect-staging-phase.onrender.com",  # Change to your real URL
 )
 
 
-def separador(char="─", ancho=55):
-    print(char * ancho)
+def separator(char="─", width=55):
+    print(char * width)
 
 
 def main():
     token = load_token()
     if not token:
-        print("❌ No se encontró el DISCORD_TOKEN.")
+        print("❌ DISCORD_TOKEN not found.")
         sys.exit(1)
 
     token_prefix = token[:20]
     url = f"{RENDER_URL}/dashboard"
 
     print()
-    separador("═")
-    print("  📊  HELITH — Panel de Métricas de Consumo")
-    separador("═")
-    print(f"  🌐 Consultando: {url}")
+    separator("═")
+    print("  📊  HELITH — Token Usage Dashboard")
+    separator("═")
+    print(f"  🌐 Querying: {url}")
 
     try:
         resp = requests.get(
@@ -63,63 +63,63 @@ def main():
             timeout=15,
         )
     except requests.exceptions.ConnectionError:
-        print("\n❌ No se pudo conectar. ¿Está el bot corriendo en Render?")
+        print("\n❌ Could not connect. Is the bot running on Render?")
         sys.exit(1)
     except requests.exceptions.Timeout:
         print(
-            "\n⏱️  Timeout. Render puede estar despertando al bot "
-            "(espera 30s e inténtalo de nuevo)."
+            "\n⏱️  Timeout. Render may be waking up the bot "
+            "(wait 30s and try again)."
         )
         sys.exit(1)
 
     if resp.status_code == 401:
-        print("\n🔒 No autorizado. Verifica tu DISCORD_TOKEN.")
+        print("\n🔒 Unauthorized. Check your DISCORD_TOKEN.")
         sys.exit(1)
 
     if resp.status_code != 200:
-        print(f"\n❌ Error HTTP {resp.status_code}: {resp.text}")
+        print(f"\n❌ HTTP Error {resp.status_code}: {resp.text}")
         sys.exit(1)
 
     data = resp.json()
     stats = data.get("stats_7d", {})
     predictions = data.get("predictions", {})
 
-    # ── Resumen general ───────────────────────────────────────────────────────
+    # ── General summary ────────────────────────────────────────────────────────
     print()
-    separador()
-    print("  📅  RESUMEN — Últimos 7 días")
-    separador()
-    print(f"  🔢 Total de tokens consumidos : {stats.get('total_tokens', 0):>10,}")
+    separator()
+    print("  📅  SUMMARY — Last 7 days")
+    separator()
+    print(f"  🔢 Total tokens consumed  : {stats.get('total_tokens', 0):>10,}")
     print(
-        f"  📈 Promedio diario            : {stats.get('avg_tokens_per_day', 0):>10,}"
+        f"  📈 Daily average          : {stats.get('avg_tokens_per_day', 0):>10,}"
     )
 
     alerts = data.get("active_alerts", 0)
     alert_label = (
-        f"⚠️  {alerts} modelo(s) en alerta" if alerts > 0 else "✅ Sin alertas activas"
+        f"⚠️  {alerts} model(s) on alert" if alerts > 0 else "✅ No active alerts"
     )
     print(f"\n  {alert_label}")
 
-    # ── Consumo por modelo ────────────────────────────────────────────────────
+    # ── Usage by model ─────────────────────────────────────────────────────────
     by_model = stats.get("by_model", {})
     if by_model:
         print()
-        separador()
-        print("  🤖  CONSUMO POR MODELO (7 días)")
-        separador()
+        separator()
+        print("  🤖  USAGE BY MODEL (7 days)")
+        separator()
         for model, tokens in sorted(by_model.items(), key=lambda x: -x[1]):
             bar_pct = tokens / max(by_model.values()) * 20
             bar = "█" * int(bar_pct) + "░" * (20 - int(bar_pct))
             print(f"  {model[:35]:<35} {tokens:>8,}t  [{bar}]")
 
-    # ── Predicciones de agotamiento ───────────────────────────────────────────
+    # ── Exhaustion predictions ─────────────────────────────────────────────────
     print()
-    separador()
-    print("  🔮  PREDICCIÓN DE AGOTAMIENTO (por modelo)")
-    separador()
+    separator()
+    print("  🔮  EXHAUSTION FORECAST (by model)")
+    separator()
     for model, pred in predictions.items():
         if pred.get("avg_daily_tokens", 0) == 0:
-            continue  # Saltar modelos sin datos
+            continue  # Skip models with no data
 
         pct = pred.get("pct_used", 0)
         days = pred.get("days_until_exhaustion")
@@ -128,15 +128,15 @@ def main():
 
         days_str = f"{days}d" if days else "∞"
         print(f"\n  {icon} {model}")
-        print(f"     Consumo diario: {pred['avg_daily_tokens']:,} tokens")
-        print(f"     Uso del límite: {pct}%  |  Días hasta agotar: {days_str}")
+        print(f"     Daily usage: {pred['avg_daily_tokens']:,} tokens")
+        print(f"     Limit used:  {pct}%  |  Days until exhaustion: {days_str}")
         print(f"     {pred.get('message', '')}")
 
-    # ── Footer ────────────────────────────────────────────────────────────────
+    # ── Footer ─────────────────────────────────────────────────────────────────
     print()
-    separador("═")
-    print(f"  ⏱️  Generado: {data.get('generated_at', 'N/A')}")
-    separador("═")
+    separator("═")
+    print(f"  ⏱️  Generated: {data.get('generated_at', 'N/A')}")
+    separator("═")
     print()
 
 

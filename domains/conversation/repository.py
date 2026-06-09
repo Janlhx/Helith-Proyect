@@ -169,7 +169,7 @@ class ConversationRepository:
         limit: int = 3,
         threshold: float = 0.7,
     ):
-        """Busca memorias semánticas similares en el servidor actual."""
+        """Searches for semantically similar memories in the current server."""
         if self.supabase:
             try:
                 response = self.supabase.rpc(
