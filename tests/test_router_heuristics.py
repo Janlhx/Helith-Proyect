@@ -2,7 +2,7 @@ from domains.bot.router import intent_router
 
 
 def test_needs_web_search_explicit_triggers():
-    """Prueba que los disparadores explícitos fuercen la búsqueda."""
+    """Test that explicit triggers force search."""
     assert (
         intent_router.needs_web_search(
             "busca a qué hora juega el Real Madrid"
@@ -21,7 +21,7 @@ def test_needs_web_search_explicit_triggers():
 
 
 def test_needs_web_search_news_keywords():
-    """Prueba que las palabras de noticias disparen la búsqueda."""
+    """Test that news keywords trigger search."""
     assert (
         intent_router.needs_web_search("cuéntame sobre la actualidad en Colombia")
         is True
@@ -42,7 +42,7 @@ def test_needs_web_search_news_keywords():
 
 
 def test_needs_web_search_sports_and_music():
-    """Prueba que deportes y música disparen la búsqueda."""
+    """Test that sports and music trigger search."""
     assert (
         intent_router.needs_web_search("¿Cuál es la canción del mundial 2026?")
         is True
@@ -58,7 +58,7 @@ def test_needs_web_search_sports_and_music():
 
 
 def test_needs_web_search_finance_and_weather():
-    """Prueba que el clima y divisas disparen la búsqueda."""
+    """Test that weather and finance trigger search."""
     assert (
         intent_router.needs_web_search("¿A cuánto está el dólar en pesos hoy?")
         is True
@@ -78,14 +78,14 @@ def test_needs_web_search_finance_and_weather():
 
 
 def test_needs_web_search_no_trigger():
-    """Prueba que la conversación cotidiana no dispare la búsqueda."""
+    """Test that daily conversation does not trigger search."""
     assert intent_router.needs_web_search("hola, cómo estás?") is False
     assert intent_router.needs_web_search("me gusta comer pizza") is False
     assert intent_router.needs_web_search("cuéntame un chiste") is False
 
 
 def test_needs_web_search_discord_examples():
-    """Casos reales reportados en Discord."""
+    """Real cases reported on Discord."""
     assert (
         intent_router.needs_web_search(
             "puedes buscar cual fue la canción mas reciente que sacó shakira?"

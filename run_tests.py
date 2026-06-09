@@ -3,10 +3,10 @@ import sys
 
 
 def main():
-    # Configurar logs
+    # Configure logging
     logging.basicConfig(level=logging.INFO)
 
-    # Añadir directorio actual al path
+    # Add current directory to path
     sys.path.insert(0, ".")
 
     from tests.unit.test_osu_ml import (
@@ -19,20 +19,20 @@ def main():
     )
 
     print("==================================================")
-    print("         INICIANDO TEST RUNNER DE HELITH          ")
+    print("           STARTING HELITH TEST RUNNER           ")
     print("==================================================")
 
     tests = [
-        ("Cálculo de Tiempo Esperado de Juego", test_expected_playtime),
-        ("Cálculo de Indicador de Mejora (ii)", test_improvement_indicator),
-        ("Ajuste de Regresión Log-Lineal (OLS)", test_fit_log_linear_regression),
-        ("Predicción de Días al Rango Objetivo", test_predict_days_to_rank),
+        ("Expected Playtime Calculation", test_expected_playtime),
+        ("Improvement Indicator (ii) Calculation", test_improvement_indicator),
+        ("Log-Linear Regression Fit (OLS)", test_fit_log_linear_regression),
+        ("Days to Target Rank Prediction", test_predict_days_to_rank),
         (
-            "Determinismo del Cliente en Modo Mock",
+            "Mock Client Determinism",
             test_osu_client_mock_determinism,
         ),
         (
-            "Persistencia y Fallback de SQLite",
+            "SQLite Persistence and Fallback",
             test_osu_repository_sqlite_fallback,
         ),
     ]
@@ -42,12 +42,12 @@ def main():
 
     for name, test_func in tests:
         try:
-            print(f"-> Ejecutando: {name}...", end="", flush=True)
+            print(f"-> Running: {name}...", end="", flush=True)
             test_func()
             print("  [OK]")
             passed += 1
         except Exception as e:
-            print("  [FALLO]")
+            print("  [FAIL]")
             print(f"   -> Error: {e}")
             import traceback
 
@@ -55,7 +55,7 @@ def main():
             failed += 1
 
     print("==================================================")
-    print(f"RESULTADO: {passed} PASADOS | {failed} FALLADOS")
+    print(f"RESULTS: {passed} PASSED | {failed} FAILED")
     print("==================================================")
 
     if failed > 0:

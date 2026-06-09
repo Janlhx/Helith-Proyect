@@ -150,8 +150,6 @@ def build_search_query(content: str) -> str:
         text = match.group(1).strip()
 
     if YEAR_QUESTION.search(text):
-        return "año actual fecha de hoy"
+        return "current year today's date"
 
     return text or content.strip()
-
-#hello

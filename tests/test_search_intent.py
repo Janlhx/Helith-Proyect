@@ -2,7 +2,7 @@ from domains.bot.search_intent import build_search_query, needs_web_search
 
 
 def test_explicit_search_anywhere_in_message():
-    """'puedes buscar...' debe disparar aunque no empiece con buscar."""
+    """'can you search...' should trigger even if it doesn't start with search."""
     assert (
         needs_web_search(
             "puedes buscar cual fue la canción mas reciente que sacó shakira?"
@@ -19,8 +19,11 @@ def test_freshness_without_explicit_search():
 
 
 def test_build_search_query_year():
-    assert build_search_query("busca en que año estamos") == "año actual fecha de hoy"
-    assert build_search_query("helith en qué año estamos?") == "año actual fecha de hoy"
+    assert build_search_query("busca en que año estamos") == "current year today's date"
+    assert (
+        build_search_query("helith en qué año estamos?")
+        == "current year today's date"
+    )
 
 
 def test_build_search_query_strips_filler():

@@ -40,7 +40,7 @@ def calculate_improvement_indicator(pp: float, play_time_seconds: int) -> float:
     """
     actual_hours = play_time_seconds / 3600.0
     if actual_hours <= 1.0:
-        return 1.0  # Evitar división por cero o datos extremadamente nuevos
+        return 1.0  # Avoid division by zero or extremely new data
 
     expected_hours = calculate_expected_playtime(pp)
     if expected_hours <= 0:
@@ -80,21 +80,21 @@ def fit_log_linear_regression(
     m = numerator / denominator
     c = mean_y - (m * mean_x)
 
-    # --- Ajuste Adaptativo por ii (Improvement Indicator) ---
-    # Un ii > 1.0 significa que el jugador es muy eficiente progresando.
-    # Si su tendencia actual es de mejora (m < 0, ya que bajar de rango es mejorar),
-    # aceleramos la pendiente de mejora usando un factor amortiguado.
-    # Si su tendencia es mala (m > 0), el ii alto ayuda a amortiguar la caída.
-    factor = 0.7 + (0.3 * ii)  # Damping factor estable
+    # --- Adaptive Adjustment by ii (Improvement Indicator) ---
+    # ii > 1.0 means the player progresses very efficiently.
+    # If their trend is improving (m < 0, since a lower rank number is better),
+    # we accelerate the slope using a damped factor.
+    # If their trend is bad (m > 0), a high ii helps dampen the decline.
+    factor = 0.7 + (0.3 * ii)  # Stable damping factor
 
     if m < 0:
-        m_adjusted = m * factor  # Se vuelve más negativo (mejora más rápida)
+        m_adjusted = m * factor  # Becomes more negative (faster improvement)
     else:
-        m_adjusted = m / factor  # Se reduce la velocidad de empeoramiento
+        m_adjusted = m / factor  # Reduces the speed of regression
 
     logger.debug(
-        f"Ajuste de pendiente: m_original={m:.6f}, "
-        f"m_adjusted={m_adjusted:.6f} con ii={ii}"
+        f"Slope adjustment: m_original={m:.6f}, "
+        f"m_adjusted={m_adjusted:.6f} with ii={ii}"
     )
     return m_adjusted, c
 
@@ -102,19 +102,19 @@ def fit_log_linear_regression(
 def predict_days_to_rank(
     history: List[Tuple[int, int]], target_rank: int, ii: float = 1.0
 ) -> PredictionResult:
-    """Entrena el modelo y predice los días necesarios para alcanzar el rango
-    objetivo.
+    """Trains the model and predicts the number of days needed to reach
+    the target rank.
 
-    - 'history' debe ser una lista de tuplas (dia_relativo, rango). El último
-      elemento es hoy.
+    - 'history' must be a list of tuples (relative_day, rank). The last
+      element represents today.
     """
     current_rank = history[-1][1]
     last_day = history[-1][0]
 
-    # 1. Ajustar el modelo
+    # 1. Fit the model
     m, c = fit_log_linear_regression(history, ii)
 
-    # Si el rango es el mismo o el objetivo ya se superó
+    # If the rank is the same or the target has already been surpassed
     if target_rank >= current_rank:
         return {
             "current_rank": current_rank,
@@ -125,17 +125,18 @@ def predict_days_to_rank(
             "days_to_target": 0.0,
             "confidence_interval": None,
             "message": (
-                f"Ya has alcanzado o superado tu rango objetivo de #{target_rank}."
+                f"You have already reached or surpassed your target rank of "
+                f"#{target_rank}."
             ),
         }
 
-    # 2. Verificar dirección de la pendiente
-    # m < 0 significa que el log(rango) está disminuyendo, es decir, el rango
-    # numérico está mejorando.
+    # 2. Verify slope direction
+    # m < 0 means log(rank) is decreasing, i.e., the numeric rank
+    # is improving.
     is_improving = m < 0
 
     if not is_improving:
-        # Pendiente plana o positiva (empeorando)
+        # Flat or positive slope (regressing)
         return {
             "current_rank": current_rank,
             "target_rank": target_rank,
@@ -145,13 +146,13 @@ def predict_days_to_rank(
             "days_to_target": None,
             "confidence_interval": None,
             "message": (
-                f"Tu tendencia actual de los últimos {len(history)} días indica "
-                "estancamiento o retroceso. A este ritmo, matemáticamente no "
-                f"alcanzarás el rango #{target_rank}."
+                f"Your trend over the last {len(history)} days indicates "
+                "stagnation or regression. At this pace, you will not "
+                f"mathematically reach rank #{target_rank}."
             ),
         }
 
-    # 3. Calcular la predicción
+    # 3. Calculate the prediction
     # ln(target_rank) = m * x_target + c  =>  x_target = (ln(target_rank) - c) / m
     target_y = math.log(float(target_rank))
     target_x = (target_y - c) / m
@@ -159,12 +160,12 @@ def predict_days_to_rank(
     days_to_target = target_x - last_day
 
     if days_to_target < 0:
-        # En teoría no debería pasar si target_rank < current_rank e is_improving,
-        # pero protegemos de anomalías numéricas.
+        # Theoretically should not happen if target_rank < current_rank and
+        # is_improving, but we guard against numerical anomalies.
         days_to_target = 0.0
 
-    # 4. Calcular intervalo de confianza básico (±15% según estabilidad)
-    # Entre más dispersos los puntos del log lineal, mayor el intervalo.
+    # 4. Calculate basic confidence interval (±15% based on stability)
+    # The more dispersed the log-linear points, the wider the interval.
     residuals = []
     for day, r in history:
         pred_ln = m * day + c
@@ -181,21 +182,21 @@ def predict_days_to_rank(
     ii_desc = ""
     if ii > 1.2:
         ii_desc = (
-            f"Tu índice de mejora es excelente ({ii:.2f}), "
-            "progresas más rápido que el promedio. "
+            f"Your improvement index is excellent ({ii:.2f}), "
+            "you progress faster than average. "
         )
     elif ii < 0.8:
         ii_desc = (
-            f"Tu índice de mejora actual es bajo ({ii:.2f}), "
-            "requieres mayor eficiencia de juego. "
+            f"Your current improvement index is low ({ii:.2f}), "
+            "you need to improve your play efficiency. "
         )
     else:
-        ii_desc = f"Tu índice de mejora es estándar ({ii:.2f}), en la media general. "
+        ii_desc = f"Your improvement index is average ({ii:.2f}), right in the middle. "
 
     message = (
-        f"{ii_desc}Con tu tendencia actual, estimo que alcanzarás el rango "
-        f"#{target_rank} en aproximadamente **{round(days_to_target)} días** "
-        f"(rango probable: {round(min_days)} a {round(max_days)} días)."
+        f"{ii_desc}Based on your current trend, I estimate you'll reach rank "
+        f"#{target_rank} in approximately **{round(days_to_target)} days** "
+        f"(likely range: {round(min_days)} to {round(max_days)} days)."
     )
 
     return {

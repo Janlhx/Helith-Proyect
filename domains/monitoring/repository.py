@@ -103,12 +103,12 @@ class MonitoringRepository:
         return totals
 
     def _save_sqlite(self, log: TokenUsageLog):
-        """Guarda el log en SQLite local."""
+        """Saves the log to local SQLite."""
         from core.db.connection import get_sqlite_connection
 
         conn = get_sqlite_connection()
         if not conn:
-            logger.critical("No se pudo conectar a SQLite de fallback.")
+            logger.critical("Could not connect to fallback SQLite database.")
             return
 
         try:
@@ -145,12 +145,12 @@ class MonitoringRepository:
                     ),
                 )
         except Exception as e:
-            logger.error(f"Error al guardar log en SQLite: {e}")
+            logger.error(f"Error saving log to SQLite: {e}")
         finally:
             conn.close()
 
     def _get_usage_sqlite(self, days: int = 7) -> list[dict]:
-        """Recupera los logs de SQLite local."""
+        """Retrieves usage logs from local SQLite."""
         from datetime import datetime, timedelta
 
         from core.db.connection import get_sqlite_connection
@@ -181,13 +181,13 @@ class MonitoringRepository:
                     for row in rows
                 ]
         except Exception as e:
-            logger.error(f"Error al leer logs de SQLite: {e}")
+            logger.error(f"Error reading logs from SQLite: {e}")
             return []
         finally:
             conn.close()
 
     def get_server_usage_last_days(self, days: int = 7) -> list[dict]:
-        """Recupera el consumo de tokens agrupado por servidor."""
+        """Retrieves token usage grouped by server."""
         if self.supabase:
             try:
                 from datetime import datetime, timedelta
@@ -201,9 +201,9 @@ class MonitoringRepository:
                 )
                 return response.data or []
             except Exception as e:
-                logger.error(f"Error en Supabase get_server_usage: {e}. Usando SQLite.")
+                logger.error(f"Error in Supabase get_server_usage: {e}. Using SQLite.")
 
-        # Fallback a SQLite
+        # Fallback to SQLite
         from core.db.connection import get_sqlite_connection
 
         conn = get_sqlite_connection()
@@ -228,13 +228,13 @@ class MonitoringRepository:
                     for r in cursor.fetchall()
                 ]
         except Exception as e:
-            logger.error(f"Error al leer server usage de SQLite: {e}")
+            logger.error(f"Error reading server usage from SQLite: {e}")
             return []
         finally:
             conn.close()
 
     def save_rate_limit_hit(self, server_id: str, user_id: str):
-        """Registra un impacto al rate limit en la base de datos."""
+        """Registers a rate limit hit in the database."""
         if self.supabase:
             try:
                 self.supabase.table("rate_limit_hits").insert(
@@ -242,9 +242,9 @@ class MonitoringRepository:
                 ).execute()
                 return
             except Exception as e:
-                logger.error(f"Error en Supabase rate limit save: {e}. Usando SQLite.")
+                logger.error(f"Error in Supabase rate limit save: {e}. Using SQLite.")
 
-        # Fallback a SQLite
+        # Fallback to SQLite
         from core.db.connection import get_sqlite_connection
 
         conn = get_sqlite_connection()
@@ -267,12 +267,12 @@ class MonitoringRepository:
                     (server_id, user_id),
                 )
         except Exception as e:
-            logger.error(f"Error al guardar rate limit en SQLite: {e}")
+            logger.error(f"Error saving rate limit to SQLite: {e}")
         finally:
             conn.close()
 
     def get_rate_limit_hits_last_days(self, days: int = 7) -> list[dict]:
-        """Recupera los impactos al rate limit de los últimos N días."""
+        """Retrieves rate limit hits from the last N days."""
         if self.supabase:
             try:
                 from datetime import datetime, timedelta
@@ -286,9 +286,9 @@ class MonitoringRepository:
                 )
                 return response.data or []
             except Exception as e:
-                logger.error(f"Error en Supabase get_rate_limit: {e}. Usando SQLite.")
+                logger.error(f"Error in Supabase get_rate_limit: {e}. Using SQLite.")
 
-        # Fallback a SQLite
+        # Fallback to SQLite
         from core.db.connection import get_sqlite_connection
 
         conn = get_sqlite_connection()
@@ -313,7 +313,7 @@ class MonitoringRepository:
                     for r in cursor.fetchall()
                 ]
         except Exception as e:
-            logger.error(f"Error al leer rate limit hits de SQLite: {e}")
+            logger.error(f"Error reading rate limit hits from SQLite: {e}")
             return []
         finally:
             conn.close()

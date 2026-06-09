@@ -8,7 +8,7 @@ from core.tools.search import TavilySearchClient
 @pytest.mark.asyncio
 @patch("core.tools.search.settings")
 async def test_tavily_search_disabled(mock_settings):
-    """Prueba que retorne vacío si la API key no está configurada."""
+    """Test that it returns empty if the API key is not configured."""
     mock_settings.TAVILY_API_KEY = ""
     client = TavilySearchClient()
     assert client.enabled is False
@@ -21,12 +21,12 @@ async def test_tavily_search_disabled(mock_settings):
 @patch("core.tools.search.settings")
 @patch("httpx.AsyncClient.post")
 async def test_tavily_search_success(mock_post, mock_settings):
-    """Prueba el éxito de la búsqueda retornando un resumen conciso."""
+    """Test successful search returning a concise summary."""
     mock_settings.TAVILY_API_KEY = "test_tavily_key"
     client = TavilySearchClient()
     assert client.enabled is True
 
-    # Configurar respuesta HTTP exitosa con MagicMock sincrónico
+    # Setup successful HTTP response with synchronous MagicMock
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
@@ -47,7 +47,7 @@ async def test_tavily_search_success(mock_post, mock_settings):
 @patch("core.tools.search.settings")
 @patch("httpx.AsyncClient.post")
 async def test_tavily_search_api_error(mock_post, mock_settings):
-    """Prueba que si la API da error retorne una cadena vacía."""
+    """Test that if the API returns an error it returns an empty string."""
     mock_settings.TAVILY_API_KEY = "test_tavily_key"
     client = TavilySearchClient()
 
@@ -64,7 +64,7 @@ async def test_tavily_search_api_error(mock_post, mock_settings):
 @patch("core.tools.search.settings")
 @patch("httpx.AsyncClient.post")
 async def test_tavily_search_exception(mock_post, mock_settings):
-    """Prueba que si ocurre una excepción de red retorne cadena vacía."""
+    """Test that if a network exception occurs it returns an empty string."""
     mock_settings.TAVILY_API_KEY = "test_tavily_key"
     client = TavilySearchClient()
     mock_post.side_effect = Exception("Connection Refused")

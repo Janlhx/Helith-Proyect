@@ -8,7 +8,7 @@ from core.llm.embeddings import generate_embedding
 @pytest.mark.asyncio
 @patch("core.llm.embeddings.settings")
 async def test_generate_embedding_missing_key(mock_settings):
-    """Prueba que retorne vector dummy si la API key no está configurada."""
+    """Test that a zero-vector dummy is returned if the API key is not configured."""
     mock_settings.GEMINI_API_KEY = ""
 
     embedding = await generate_embedding("hola")
@@ -20,7 +20,7 @@ async def test_generate_embedding_missing_key(mock_settings):
 @patch("core.llm.embeddings.settings")
 @patch("google.generativeai.embed_content_async")
 async def test_generate_embedding_success(mock_embed, mock_settings):
-    """Prueba que retorne el vector real de Gemini si es exitoso."""
+    """Test that the real Gemini embedding vector is returned on success."""
     mock_settings.GEMINI_API_KEY = "test_key"
     mock_embed.return_value = {"embedding": [0.1, 0.2] + [0.0] * 766}
 
@@ -40,7 +40,7 @@ async def test_generate_embedding_success(mock_embed, mock_settings):
 @patch("core.llm.embeddings.settings")
 @patch("google.generativeai.embed_content_async")
 async def test_generate_embedding_error_fallback(mock_embed, mock_settings):
-    """Prueba que si falla la llamada retorne el vector dummy."""
+    """Test that a zero-vector dummy is returned if the API call fails."""
     mock_settings.GEMINI_API_KEY = "test_key"
     mock_embed.side_effect = Exception("API Error")
 

@@ -18,8 +18,8 @@ def service():
 async def test_process_message_success(
     mock_llm_pool, mock_repo, mock_router, mock_embed, service
 ):
-    """Prueba el flujo feliz de la conversación con memorias."""
-    # 1. Configurar mocks
+    """Test the happy path of conversation with memories."""
+    # 1. Configure mocks
     mock_repo.get_history.return_value = [
         {"role": "user", "content": "hola"},
         {"role": "assistant", "content": "hola, qué hay"},
@@ -29,27 +29,27 @@ async def test_process_message_success(
     mock_embed.return_value = [0.0] * 768
     mock_router.needs_web_search.return_value = False
 
-    # Simulamos la respuesta de la IA
+    # Mock AI response
     mock_llm_pool.generate_response = AsyncMock(
-        return_value="todo bien por acá, tranquila"
+        return_value="all good here, relax"
     )
 
-    # 2. Ejecutar
+    # 2. Run
     response = await service.process_message(
         "canal_1", "server_1", "user_1", "¿qué tal?"
     )
 
-    # 3. Verificar resultados
-    assert response == "todo bien por acá, tranquila"
+    # 3. Verify results
+    assert response == "all good here, relax"
 
-    # Verificar llamadas al repositorio
+    # Verify repository calls
     assert mock_repo.save_message.call_count == 2
     mock_repo.save_message.assert_any_call("canal_1", "user_1", "user", "¿qué tal?")
     mock_repo.save_message.assert_any_call(
-        "canal_1", "helith", "assistant", "todo bien por acá, tranquila"
+        "canal_1", "helith", "assistant", "all good here, relax"
     )
 
-    # Verificar guardado en memorias (2 veces: user y assistant)
+    # Verify memory saving (2 times: user and assistant)
     assert mock_repo.save_memory.call_count == 2
     mock_repo.save_memory.assert_any_call(
         server_id="server_1",
@@ -62,16 +62,16 @@ async def test_process_message_success(
         server_id="server_1",
         channel_id="canal_1",
         user_id="helith",
-        content="todo bien por acá, tranquila",
+        content="all good here, relax",
         embedding=[0.0] * 768,
     )
 
-    # Verificar que el LLM fue llamado con el historial
+    # Verify the LLM was called with the history
     mock_llm_pool.generate_response.assert_called_once()
     args, kwargs = mock_llm_pool.generate_response.call_args
     assert "prompt" in kwargs
     assert "system_prompt" in kwargs
-    assert "Tú (Helith): hola, qué hay" in kwargs["prompt"]
+    assert "You (Helith): hola, qué hay" in kwargs["prompt"]
 
 
 @pytest.mark.asyncio
@@ -82,18 +82,18 @@ async def test_process_message_success(
 async def test_process_message_fallback_error(
     mock_llm_pool, mock_repo, mock_router, mock_embed, service
 ):
-    """Prueba que el bot responda con el mensaje de emergencia si las APIs fallan."""
+    """Test that the bot responds with the fallback message if APIs fail."""
     mock_embed.return_value = [0.0] * 768
     mock_router.needs_web_search.return_value = False
     mock_repo.search_memories.return_value = []
 
-    # Simular que el LLM tira una excepción (API caída, sin saldo, etc.)
+    # Simulating LLM throwing an exception
     mock_llm_pool.generate_response = AsyncMock(
         side_effect=Exception("Todas las APIs fallaron")
     )
 
-    # 2. Ejecutar
-    response = await service.process_message("canal_1", "server_1", "user_1", "mensaje")
+    # 2. Run
+    response = await service.process_message("canal_1", "server_1", "user_1", "message")
 
-    # 3. Verificar que responde la frase por defecto y no rompe el programa
-    assert response == "Me cuesta procesar eso ahora mismo. Inténtalo de nuevo."
+    # 3. Verify it responds with the default fallback and doesn't crash
+    assert response == "I'm having trouble processing that right now. Please try again."

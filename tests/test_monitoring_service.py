@@ -5,10 +5,10 @@ from domains.monitoring.service import monitoring_service
 
 @patch("domains.monitoring.service.monitoring_repo")
 def test_monitoring_report_generation(mock_repo):
-    """Verifica que el reporte calcule el uso diario y detecte alertas."""
-    # Simular datos para que una predicción active alerta
-    # (ej: 450k tokens diarios promedio)
-    # Límite de llama-3.3-70b-versatile = 500k. 450k > 80% (400k)
+    """Verifies that the report calculates daily usage and detects alerts."""
+    # Simulate data so that a prediction triggers an alert
+    # (e.g., 450k average daily tokens)
+    # limit of llama-3.3-70b-versatile = 500k. 450k > 80% (400k)
     mock_repo.get_usage_last_days.return_value = [
         {
             "model_name": "llama-3.3-70b-versatile",
@@ -28,13 +28,13 @@ def test_monitoring_report_generation(mock_repo):
 
     report = monitoring_service.get_full_report()
 
-    # Debe alertar porque superamos el 80% del límite de 500k
+    # Must alert since we exceeded 80% of 500k limit
     assert report["active_alerts"] > 0
     assert report["server_usage_analysis"]["server1"]["status"] == "NORMAL"
 
 
 def test_monitoring_rate_limit_hits():
-    """Prueba que el status del servidor cambie a crítico en ataques de spam."""
+    """Test that server status transitions to CRITICAL during spam attacks."""
     with patch("domains.monitoring.service.monitoring_repo") as mock_repo:
         mock_repo.get_usage_last_days.return_value = []
         mock_repo.get_total_by_model.return_value = {}
@@ -45,7 +45,7 @@ def test_monitoring_rate_limit_hits():
                 "timestamp": "2026-05-19T12:00:00",
             }
         ]
-        # Simular 16 rate limits (Umbral para CRÍTICO es > 15 rate limits)
+        # Simulate 16 rate limit hits (Threshold for CRITICAL is > 15 rate limit hits)
         mock_repo.get_rate_limit_hits_last_days.return_value = [
             {
                 "server_id": "server_attack",
@@ -56,4 +56,4 @@ def test_monitoring_rate_limit_hits():
         ]
 
         report = monitoring_service.get_full_report()
-        assert report["server_usage_analysis"]["server_attack"]["status"] == "CRÍTICO"
+        assert report["server_usage_analysis"]["server_attack"]["status"] == "CRITICAL"

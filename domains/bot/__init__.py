@@ -1,1 +1,1 @@
-# Archivo de inicialización de paquete
+# Package initialization file

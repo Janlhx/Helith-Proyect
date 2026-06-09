@@ -59,12 +59,12 @@ class ConversationRepository:
 
         conn = get_sqlite_connection()
         if not conn:
-            logger.critical("No se pudo conectar a SQLite de fallback.")
+            logger.critical("Could not connect to fallback SQLite database.")
             return
 
         try:
             with conn:
-                # Nos aseguramos de que la tabla exista
+                # Ensure the table exists
                 conn.execute(
                     """
                     CREATE TABLE IF NOT EXISTS conversation_history (
@@ -86,12 +86,12 @@ class ConversationRepository:
                     (channel_id, user_id, role, content),
                 )
         except Exception as e:
-            logger.error(f"Error al guardar en SQLite: {e}")
+            logger.error(f"Error saving to SQLite: {e}")
         finally:
             conn.close()
 
     def _get_history_sqlite(self, channel_id: str, limit: int = 10):
-        """Recupera el historial de SQLite local."""
+        """Retrieve conversation history from local SQLite."""
         from core.db.connection import get_sqlite_connection
 
         conn = get_sqlite_connection()
@@ -100,7 +100,7 @@ class ConversationRepository:
 
         try:
             with conn:
-                # Nos aseguramos de que la tabla exista
+                # Ensure the table exists
                 conn.execute(
                     """
                     CREATE TABLE IF NOT EXISTS conversation_history (
@@ -123,13 +123,13 @@ class ConversationRepository:
                     (channel_id, limit),
                 )
                 rows = cursor.fetchall()
-                # Convertimos a formato de diccionario compatible con Supabase
+                # Convert to a dictionary format compatible with Supabase
                 history = [
                     {"role": row["role"], "content": row["content"]} for row in rows
                 ]
                 return list(reversed(history))
         except Exception as e:
-            logger.error(f"Error al leer de SQLite: {e}")
+            logger.error(f"Error reading from SQLite: {e}")
             return []
         finally:
             conn.close()
@@ -142,7 +142,7 @@ class ConversationRepository:
         content: str,
         embedding: list[float],
     ):
-        """Guarda un embedding de memoria semántica en la base de datos."""
+        """Save a semantic memory embedding to the database."""
         if self.supabase:
             try:
                 data = {
@@ -169,7 +169,7 @@ class ConversationRepository:
         limit: int = 3,
         threshold: float = 0.7,
     ):
-        """Busca memorias semánticas similares en el servidor actual."""
+        """Searches for semantically similar memories in the current server."""
         if self.supabase:
             try:
                 response = self.supabase.rpc(
@@ -274,20 +274,20 @@ class ConversationRepository:
                         )
                 except Exception as ex:
                     logger.error(
-                        f"Error procesando fila de memoria SQLite {row['id']}: {ex}"
+                        f"Error processing SQLite memory row {row['id']}: {ex}"
                     )
 
-            # Ordenar por similitud y limitar
+            # Sort by similarity and limit
             memories.sort(key=lambda x: x["similarity"], reverse=True)
             return memories[:limit]
         except Exception as e:
-            logger.error(f"Error al buscar memorias en SQLite: {e}")
+            logger.error(f"Error searching memories in SQLite: {e}")
             return []
         finally:
             conn.close()
 
     def _ensure_memories_table(self, conn):
-        """Asegura que la tabla de memorias exista en SQLite."""
+        """Ensure that the memories table exists in SQLite."""
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS conversation_memories (
@@ -303,7 +303,7 @@ class ConversationRepository:
         )
 
     def _cosine_similarity(self, v1: list[float], v2: list[float]) -> float:
-        """Calcula la similitud de coseno entre dos vectores en Python puro."""
+        """Calculate cosine similarity between two vectors in pure Python."""
         dot_product = sum(a * b for a, b in zip(v1, v2))
         magnitude_v1 = sum(a * a for a in v1) ** 0.5
         magnitude_v2 = sum(b * b for b in v2) ** 0.5
