@@ -380,8 +380,8 @@ def _start_bot_thread():
         loop.close()
 
 
-# Auto-start bot when imported by Gunicorn (not running as __main__)
-if __name__ != "__main__":
+# Auto-start bot when imported by Gunicorn (not running as __main__ and not testing)
+if __name__ != "__main__" and os.environ.get("TESTING") != "true":
     bot_thread = threading.Thread(
         target=_start_bot_thread, daemon=True, name="discord-bot"
     )

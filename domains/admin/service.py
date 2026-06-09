@@ -20,12 +20,6 @@ class HelpDropdown(discord.ui.Select):
                 value="osu",
             ),
             discord.SelectOption(
-                label="Metrics & Monitoring",
-                description="Server consumption and quotas",
-                emoji="📊",
-                value="monitoring",
-            ),
-            discord.SelectOption(
                 label="AI Conversation",
                 description="Helith's identity and limits",
                 emoji="💬",
@@ -104,33 +98,6 @@ class AdminService:
             )
             return embed
 
-        elif section == "monitoring":
-            embed = discord.Embed(
-                title="📊 Monitoring & Telemetry",
-                description=(
-                    "I keep a constant log of network usage, rate limits, "
-                    "and multi-LLM token consumption across all providers."
-                ),
-                color=HELITH_COLOR,
-            )
-            embed.add_field(
-                name="Web Dashboard",
-                value=(
-                    "I expose a private web dashboard for administrators "
-                    "to monitor real-time consumption and quota exhaustion."
-                ),
-                inline=False,
-            )
-            embed.add_field(
-                name="Commands",
-                value=(
-                    "Hidden command `h.metrics` provides a quick summary "
-                    "directly in chat (Admin only)."
-                ),
-                inline=False,
-            )
-            return embed
-
         elif section == "chat":
             embed = discord.Embed(
                 title="💬 Smart Conversation",
@@ -152,10 +119,9 @@ class AdminService:
             embed.add_field(
                 name="Capabilities",
                 value=(
-                    "• **Multi-LLM Fallback:** I stay online even if a provider "
-                    "fails.\n"
-                    "• **Real-Time Search:** I can look up current news and facts.\n"
-                    "• **Semantic Memory:** I remember important context."
+                    "• **Real-Time Search:** I can look up current news and facts on the internet.\n"
+                    "• **Memory:** I remember our previous conversations and important context.\n"
+                    "• **Always Available:** I am designed to be highly reliable and ready to chat."
                 ),
                 inline=False,
             )
