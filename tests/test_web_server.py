@@ -1,8 +1,10 @@
 import json
 from unittest.mock import patch
+
 import pytest
-from main import app
+
 from core.config import settings
+from main import app
 
 @pytest.fixture
 def client():
@@ -47,7 +49,10 @@ def test_api_metrics_authorized_via_session(client):
         sess["authenticated"] = True
         
     with patch("domains.monitoring.service.monitoring_service") as mock_monitoring:
-        mock_monitoring.get_full_report.return_value = {"status": "ok", "active_alerts": 0}
+        mock_monitoring.get_full_report.return_value = {
+            "status": "ok",
+            "active_alerts": 0,
+        }
         response = client.get("/api/metrics")
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -57,10 +62,17 @@ def test_api_metrics_authorized_via_session(client):
 def test_api_metrics_authorized_via_header(client):
     """Test that /api/metrics succeeds when authorized via Bearer token."""
     with patch("domains.monitoring.service.monitoring_service") as mock_monitoring:
-        mock_monitoring.get_full_report.return_value = {"status": "ok", "active_alerts": 0}
+        mock_monitoring.get_full_report.return_value = {
+            "status": "ok",
+            "active_alerts": 0,
+        }
         
         # Token prefix matching settings.DISCORD_TOKEN[:20]
-        fake_token = settings.DISCORD_TOKEN[:20] if settings.DISCORD_TOKEN else "fake_token_value_longer_than_20"
+        fake_token = (
+            settings.DISCORD_TOKEN[:20]
+            if settings.DISCORD_TOKEN
+            else "fake_token_value_longer_than_20"
+        )
         headers = {"Authorization": f"Bearer {fake_token}"}
         
         response = client.get("/api/metrics", headers=headers)

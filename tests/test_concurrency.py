@@ -1,12 +1,12 @@
 import asyncio
 import os
-import sqlite3
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from discord.ext import commands
-from main import user_cooldown, guild_cooldown
-from domains.conversation.service import ConversationService
+
 from core.db.connection import get_sqlite_connection
+from domains.conversation.service import ConversationService
+from main import guild_cooldown, user_cooldown
 
 # Mock Discord classes for rate limit testing
 class MockAuthor:
@@ -97,19 +97,25 @@ async def test_concurrent_message_processing(
     assert results[1] == "resp_2"
     
     # Confirm repo saved messages for both sessions properly
-    assert mock_repo.save_message.call_count == 4  # 2 per conversation call (user message + assistant response)
+    # 2 per conversation call (user message + assistant response)
+    assert mock_repo.save_message.call_count == 4
 
 
 @pytest.mark.asyncio
 async def test_sqlite_db_concurrency(tmp_path):
-    """Test that SQLite fallback works under heavy concurrent reads/writes without lock crashes."""
+    """Test that SQLite fallback works under heavy concurrent reads/writes without
+    lock crashes.
+    """
     db_file = tmp_path / "test_sqlite_concurrency.db"
     
     # Override environmental db path to temp db
     with patch.dict(os.environ, {"SQLITE_DB_PATH": str(db_file)}):
         # Create test table
         conn = get_sqlite_connection()
-        conn.execute("CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, value TEXT);")
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS test_table "
+            "(id INTEGER PRIMARY KEY, value TEXT);"
+        )
         conn.commit()
         conn.close()
         
@@ -117,11 +123,15 @@ async def test_sqlite_db_concurrency(tmp_path):
         async def db_writer(worker_id):
             loop = asyncio.get_running_loop()
             
-            # Write to database inside executor to simulate non-blocking database pool operations
+            # Write to database inside executor to simulate non-blocking
+            # database pool operations
             def write():
                 c = get_sqlite_connection()
                 try:
-                    c.execute("INSERT INTO test_table (value) VALUES (?);", (f"val_{worker_id}",))
+                    c.execute(
+                        "INSERT INTO test_table (value) VALUES (?);",
+                        (f"val_{worker_id}",),
+                    )
                     c.commit()
                 finally:
                     c.close()
@@ -134,7 +144,9 @@ async def test_sqlite_db_concurrency(tmp_path):
             def read():
                 c = get_sqlite_connection()
                 try:
-                    res = c.execute("SELECT COUNT(*) as cnt FROM test_table;").fetchone()
+                    res = c.execute(
+                        "SELECT COUNT(*) as cnt FROM test_table;"
+                    ).fetchone()
                     return res["cnt"]
                 finally:
                     c.close()
@@ -153,7 +165,9 @@ async def test_sqlite_db_concurrency(tmp_path):
         
         # Verify result
         final_conn = get_sqlite_connection()
-        total_rows = final_conn.execute("SELECT COUNT(*) as cnt FROM test_table;").fetchone()["cnt"]
+        total_rows = final_conn.execute(
+            "SELECT COUNT(*) as cnt FROM test_table;"
+        ).fetchone()["cnt"]
         final_conn.close()
         
         assert total_rows == 30

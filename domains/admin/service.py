@@ -119,9 +119,12 @@ class AdminService:
             embed.add_field(
                 name="Capabilities",
                 value=(
-                    "• **Real-Time Search:** I can look up current news and facts on the internet.\n"
-                    "• **Memory:** I remember our previous conversations and important context.\n"
-                    "• **Always Available:** I am designed to be highly reliable and ready to chat."
+                    "• **Real-Time Search:** I can look up current news and "
+                    "facts on the internet.\n"
+                    "• **Memory:** I remember our previous conversations "
+                    "and important context.\n"
+                    "• **Always Available:** I am designed to be highly "
+                    "reliable and ready to chat."
                 ),
                 inline=False,
             )
