@@ -8,6 +8,7 @@ from core.db.connection import get_sqlite_connection
 from domains.conversation.service import ConversationService
 from main import guild_cooldown, user_cooldown
 
+
 # Mock Discord classes for rate limit testing
 class MockAuthor:
     def __init__(self, author_id):

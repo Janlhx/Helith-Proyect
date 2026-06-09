@@ -6,6 +6,7 @@ import pytest
 from core.config import settings
 from main import app
 
+
 @pytest.fixture
 def client():
     app.config["TESTING"] = True
