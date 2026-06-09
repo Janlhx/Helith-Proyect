@@ -125,7 +125,8 @@ def predict_days_to_rank(
             "days_to_target": 0.0,
             "confidence_interval": None,
             "message": (
-                f"You have already reached or surpassed your target rank of #{target_rank}."
+                f"You have already reached or surpassed your target rank of "
+                f"#{target_rank}."
             ),
         }
 
@@ -159,8 +160,8 @@ def predict_days_to_rank(
     days_to_target = target_x - last_day
 
     if days_to_target < 0:
-        # Theoretically should not happen if target_rank < current_rank and is_improving,
-        # but we guard against numerical anomalies.
+        # Theoretically should not happen if target_rank < current_rank and
+        # is_improving, but we guard against numerical anomalies.
         days_to_target = 0.0
 
     # 4. Calculate basic confidence interval (±15% based on stability)

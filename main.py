@@ -382,7 +382,9 @@ def _start_bot_thread():
 
 # Auto-start bot when imported by Gunicorn (not running as __main__)
 if __name__ != "__main__":
-    bot_thread = threading.Thread(target=_start_bot_thread, daemon=True, name="discord-bot")
+    bot_thread = threading.Thread(
+        target=_start_bot_thread, daemon=True, name="discord-bot"
+    )
     bot_thread.start()
     logger.info("Discord bot thread started (Gunicorn mode)")
 

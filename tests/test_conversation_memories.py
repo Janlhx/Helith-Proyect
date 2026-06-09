@@ -7,7 +7,7 @@ from domains.conversation.repository import ConversationRepository
 
 @pytest.fixture
 def temp_repo(tmp_path):
-    """Fixture that creates a ConversationRepository using a temporary SQLite database."""
+    """Fixture that creates a ConversationRepository using a temporary SQLite db."""
     db_file = tmp_path / "test_memories.db"
     os.environ["SQLITE_DB_PATH"] = str(db_file)
 

@@ -20,7 +20,10 @@ def test_freshness_without_explicit_search():
 
 def test_build_search_query_year():
     assert build_search_query("busca en que año estamos") == "current year today's date"
-    assert build_search_query("helith en qué año estamos?") == "current year today's date"
+    assert (
+        build_search_query("helith en qué año estamos?")
+        == "current year today's date"
+    )
 
 
 def test_build_search_query_strips_filler():
