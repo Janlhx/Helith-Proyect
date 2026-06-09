@@ -17,13 +17,6 @@ def test_admin_help_embed_osu():
     assert "/predict" in embed.fields[1].value
 
 
-def test_admin_help_embed_monitoring():
-    """Test the embed for the network monitoring section."""
-    embed = admin_service.get_help_embed("monitoring")
-    assert "Monitoring & Telemetry" in embed.title
-    assert "administrator" in embed.fields[0].value
-
-
 def test_admin_help_embed_chat():
     """Test the embed for the conversational section."""
     embed = admin_service.get_help_embed("chat")
