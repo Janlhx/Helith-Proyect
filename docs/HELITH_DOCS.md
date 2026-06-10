@@ -267,10 +267,13 @@ Runs on every push and PR:
 - Progress prediction model.
 - Discord integration (`/predict` command).
 
-### Phase 5 — Polish and Stabilization (Completed)
+### Phase 5 and 6 — Polish and Stabilization (Completed)
 - Real-time Web Search (Tavily).
 - Hidden administration commands.
 - Full translation to English (v1.0).
+
+### Phase 7 — Post-Release Features (v1.1.0+)
+- **Changelog Subscription System:** Allow server admins to subscribe specific channels to receive automatic changelog updates when a new version of Helith is deployed. Requires database schema updates and new admin commands.
 
 ---
 
